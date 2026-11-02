@@ -10,6 +10,31 @@ function record(value: unknown, line = 1): JsonlReadResult {
 }
 
 describe("Codex exec JSONL 이벤트 정규화", () => {
+  it("호출자 별칭으로 같은 줄 번호의 서로 다른 출처를 구분한다", () => {
+    const first = normalizeCodexExecLine(record({ type: "turn.started" }, 1), "source_A-1");
+    const second = normalizeCodexExecLine(record({ type: "turn.started" }, 1), "source_B-2");
+    expect(first.kind === "event" && first.event.source.source_id).toBe("source_A-1");
+    expect(second.kind === "event" && second.event.source.source_id).toBe("source_B-2");
+    expect(first.kind === "event" && first.event.verification_status).toBe("unverified");
+  });
+
+  it("미지원과 진단 결과에도 별칭을 보존한다", () => {
+    const unsupported = normalizeCodexExecLine(record({ type: "future.event" }), "sample_1");
+    const diagnostic = normalizeCodexExecLine({ kind: "diagnostic", line: 4, code: "invalid_json" }, "sample_1");
+    expect(unsupported.kind === "unsupported" && unsupported.source.source_id).toBe("sample_1");
+    expect(diagnostic.kind === "diagnostic" && diagnostic.source.source_id).toBe("sample_1");
+  });
+
+  it("잘못된 별칭은 입력값을 오류에 포함하지 않고 거부한다", () => {
+    for (const alias of ["", " ", "a/b", "a\\\\b", "a.b", "a\n", "한글", "x".repeat(65)]) {
+      expect(() => normalizeCodexExecLine(record({ type: "turn.started" }), alias)).toThrow(TypeError);
+    }
+    expect(() => normalizeCodexExecLine(record({ type: "turn.started" }), "private/path"))
+      .toThrowError(/^출처 별칭은 영문자, 숫자, 밑줄, 하이픈 1~64자여야 합니다\.$/);
+    const boundary = normalizeCodexExecLine(record({ type: "turn.started" }), "a".repeat(64));
+    expect(boundary.kind === "event" && boundary.event.source.source_id).toBe("a".repeat(64));
+  });
+
   it("직접 제공된 스레드 ID와 출처를 보존하고 다른 식별자는 추정하지 않는다", () => {
     const result = normalizeCodexExecLine(record({ type: "thread.started", thread_id: "synthetic-thread" }, 3));
     expect(result).toEqual({

@@ -44,10 +44,13 @@ function usageOf(value: unknown): ObservedUsage {
   };
 }
 
-/** JSONL 리더 한 줄을 변환한다. 원본 값의 실제 실행 여부를 검증하지 않는다. */
-export function normalizeCodexExecLine(input: JsonlReadResult): NormalizationResult {
+/** 출처 별칭은 호출자가 관리한다. 원본 값의 실제 실행 여부는 검증하지 않는다. */
+export function normalizeCodexExecLine(input: JsonlReadResult, sourceId?: string): NormalizationResult {
+  if (sourceId !== undefined && (typeof sourceId !== "string" || sourceId.length < 1 || sourceId.length > 64 || /[^A-Za-z0-9_-]/.test(sourceId))) {
+    throw new TypeError("출처 별칭은 영문자, 숫자, 밑줄, 하이픈 1~64자여야 합니다.");
+  }
   const source: EventSource = {
-    format: "codex_exec_jsonl", line: input.line, source_id: null, format_version: null, collected_at: null,
+    format: "codex_exec_jsonl", line: input.line, source_id: sourceId ?? null, format_version: null, collected_at: null,
   };
   if (input.kind === "diagnostic") {
     return { kind: "diagnostic", source, code: input.code };

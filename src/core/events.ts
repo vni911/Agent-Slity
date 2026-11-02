@@ -10,7 +10,8 @@ export interface EventSource {
   /** 호출자가 지정한 형식이며 출처의 진위를 증명하지 않는다. */
   format: "codex_exec_jsonl";
   line: number;
-  source_id: null;
+  /** 호출자가 지정한 별칭이며, 출처의 진위나 고유성을 보증하지 않는다. */
+  source_id: string | null;
   format_version: null;
   collected_at: null;
 }
