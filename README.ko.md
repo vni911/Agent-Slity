@@ -1,10 +1,10 @@
-# Agmet Slity
+# Agent Slity
 
-[English](README.md)
+[기본 README](README.md) · [English](README.en.md)
 
-**Run the team you need, not the team you configured.**
+**작업에 꼭 필요한 팀을 구성하고 실행하세요.**
 
-Agmet Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한 오픈소스 개발자 도구의 가칭입니다. 검증된 작업 품질을 유지하면서 중복 탐색, 불필요한 위임, 대기와 재시도를 줄이는 것이 목표입니다.
+Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한 오픈소스 개발자 도구를 개발하는 프로젝트입니다. 검증된 작업 품질을 유지하면서 중복 탐색, 불필요한 위임, 대기와 재시도를 줄이는 것이 목표입니다.
 
 ## 현재 상태
 
@@ -12,7 +12,7 @@ Agmet Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 초기 대상 환경은 Windows 11, WSL2 Ubuntu, Codex CLI입니다. 실제 지원 여부는 아직 검증하지 않았습니다. WSL 없는 Windows, Linux, macOS는 향후 대상입니다.
 
-프로젝트명은 가칭입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
+프로젝트 이름은 Agent Slity이며 저장소 이름은 `Agent-Slity`입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
 
 ## 측정하려는 내용
 
@@ -53,6 +53,6 @@ Agmet Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ## 라이선스와 기여
 
-Copyright 2026 Agmet Slity contributors. 프로젝트 자체 작성 자료에는 [Apache-2.0](LICENSE)을 적용합니다. 외부 구현이나 벤치마크 데이터는 포함하지 않습니다. 외부 자료 도입 전에 [제3자 고지](THIRD_PARTY_NOTICES.md)를 확인하세요.
+저작권 © 2026 Agent Slity 기여자. 프로젝트 자체 작성 자료에는 [Apache-2.0](LICENSE)을 적용합니다. 외부 구현이나 벤치마크 데이터는 포함하지 않습니다. 외부 자료 도입 전에 [제3자 고지](THIRD_PARTY_NOTICES.md)를 확인하세요.
 
 [CONTRIBUTING.md](CONTRIBUTING.md)에 따라 목적이 분명한 Issue와 PR로 기여하세요. 재현 가능한 증거 없이 성능 향상이나 신규성을 주장하지 마세요.

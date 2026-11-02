@@ -1,19 +1,19 @@
-# Third-Party Notices
+# 제3자 자료 고지
 
-## Current inventory
+## 현재 포함된 자료
 
-This documentation-only foundation includes no third-party implementation code, runtime dependencies, copied legacy Agent Desk code, model outputs used as fixtures, or benchmark datasets. The [Apache License, Version 2.0](LICENSE) text is included to license project-authored material; it is sourced from the [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt).
+현재 문서 단계에는 제3자 구현 코드, 실행 의존성, 과거 Agent Desk 코드, 테스트 자료로 사용하는 모델 출력, 벤치마크 데이터셋을 포함하지 않는다. 자체 작성 자료에 적용하는 [Apache License, Version 2.0](LICENSE) 원문은 [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt)에서 가져왔으며 영문 원문을 보존한다.
 
-## Future integrations
+## 향후 연동 대상
 
-Google Research Harness² is a separate external project under consideration for a later optional adapter. No Harness² code, benchmark, or integration is included here. Its exact upstream source, revision, license, and redistribution conditions must be verified during research and before any import. Mentioning it does not imply affiliation, endorsement, or compatibility.
+Google Research Harness²는 이후 선택적 어댑터로 검토할 별도의 외부 프로젝트다. 현재 Harness² 코드, 벤치마크와 연동 기능은 포함하지 않는다. 정확한 원본 저장소, 버전, 라이선스와 재배포 조건은 조사 단계와 실제 도입 전에 확인해야 한다. 프로젝트를 언급했다고 제휴, 보증이나 호환성을 의미하지 않는다.
 
-Codex is a proposed integration target. Agmet Slity is not an official Google or OpenAI product. Names of external projects identify their respective projects and do not grant rights to their trademarks or materials.
+Codex는 예정된 연동 대상이다. Agent Slity는 Google이나 OpenAI의 공식 제품이 아니다. 외부 프로젝트 이름은 해당 프로젝트를 식별하기 위한 것이며, 그 상표나 자료의 사용 권한을 부여하지 않는다.
 
-## Before importing external material
+## 외부 자료 도입 전 확인
 
-Record the upstream project and URL, pinned version or revision, affected files, license identifier and full license text, copyright/NOTICE requirements, modifications, verification date, and redistribution restrictions. Review code, assets, documentation, and datasets separately when their terms differ.
+원본 프로젝트와 URL, 고정 버전 또는 커밋, 영향을 받는 파일, 라이선스 식별자와 원문, 저작권·NOTICE 요구사항, 수정 내용, 확인 날짜와 재배포 제한을 기록한다. 코드, 이미지 등 자산, 문서와 데이터셋에 서로 다른 조건이 적용되면 각각 검토한다.
 
-Preserve required attribution and upstream notices. Referencing or wrapping an external tool does not automatically authorize redistribution of its benchmarks or other third-party data. If rights or license compatibility are unclear, mark the item as unverified and do not import it.
+필요한 출처 표시와 원본 고지를 보존한다. 외부 도구를 참조하거나 감싼다고 벤치마크나 제3자 데이터를 재배포할 권리가 자동으로 생기지 않는다. 권리나 라이선스 호환성이 불분명하면 `확인 필요`로 표시하고 가져오지 않는다.
 
-Legacy Agent Desk v0.3/v0.4 material follows the same review process and must be proposed in a separate PR. Do not copy entire previous projects into this repository.
+과거 Agent Desk v0.3/v0.4 자료도 같은 검토를 거쳐 별도 PR로 제안한다. 과거 프로젝트 전체를 이 저장소에 복사하지 않는다.

@@ -1,31 +1,37 @@
-# Repository Guidelines
+# 저장소 작업 지침
 
-## Purpose & Current Structure
+## 프로젝트와 현재 구조
 
-Agmet Slity is a working name for an open-source tool that will measure multi-agent collaboration efficiency while preserving task quality. This is the documentation-only foundation: no runtime, package manifest, test suite, or CI exists. See [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md). Add directories only when their implementation stage is authorized.
+프로젝트 이름은 **Agent Slity**로 통일한다. 저장소 이름은 `Agent-Slity`다. 작업 품질을 유지하면서 멀티에이전트 협업 효율을 측정하는 오픈소스 도구를 개발한다. 현재는 문서만 있는 0.1 단계이며 실행 코드, 패키지 설정, 테스트와 CI는 없다. [README.md](README.md)와 [기여 지침](CONTRIBUTING.md)을 참고하고, 디렉터리는 해당 구현 단계가 승인됐을 때만 추가한다.
 
-## Stage Boundaries
+## 단계별 진행
 
-Perform one explicitly requested substage per user request. Stop and report after it; wait for explicit instructions before advancing. Foundation stages are 0.1 repository/documents, 0.2 independent research, 0.3 architecture, and 0.4 tooling/templates/CI. Do not pre-implement later stages or broadly refactor unrelated work.
+사용자가 명시적으로 요청한 세부 단계 하나만 수행한다. 결과를 보고한 뒤 멈추고, 다음 요청 전에는 후속 단계를 시작하지 않는다. 초기 단계는 0.1 저장소·문서, 0.2 독립 조사, 0.3 아키텍처, 0.4 개발 도구·템플릿·CI로 구분한다. 후속 기능을 미리 구현하거나 관련 없는 코드를 대규모로 변경하지 않는다.
 
-## Communication & Evidence
+## 언어와 표현
 
-Respond to the user in Korean without emojis or excessive praise. Mark uncertain statements as `확인 필요`; verify current information against cited sources. Keep requested settings, observed events, and verified outcomes separate. Preserve missing telemetry as `unknown`, never as zero. Do not claim access to private internal reasoning, unrun tests, or unconfirmed agent activity.
+답변, 작업 계획, 설계안, 조사·아키텍처·결정 문서, 진행·완료 보고, Issue·PR 제목과 본문, 새 커밋의 설명은 **한국어로 작성한다**. 한국어를 주 언어로, 영어를 보조 언어로 사용한다. 기본 README와 README.ko.md는 한국어로 유지하고 본문을 일치시킨다. README.en.md는 같은 내용을 담은 영문 보조 문서로 제공한다. 이모지와 과한 칭찬은 사용하지 않는다.
 
-## Agent Collaboration
+프로젝트명·기술명, 코드 식별자, 경로, 명령어, 브랜치 이름, Conventional Commits 유형과 외부 라이선스 원문은 원래 표기를 유지한다. 별도 영문 보조 문서의 제공은 허용하되 한국어 기준 문서와 내용·지원 상태를 일치시킨다. 외부 자료를 원문으로 인용할 때는 한국어 설명을 덧붙인다. 공유된 과거 커밋 메시지를 번역하기 위해 이력을 재작성하지 않는다.
 
-Use subagents only for independent work that benefits from delegation; allow at most three concurrent subagents. Specify inputs, outputs, assigned files, and completion criteria. Give each edited file one owner. Keep verification and review independent from implementation. Record real agent IDs, tasks, and final states. Begin the Search/Verification pair in stage 0.2 only. Identify relayed messages as relayed.
+## 사실과 증거
 
-## Development & Validation
+불확실한 설명은 `확인 필요`로 표시하고, 최신 정보는 출처를 확인해 제시한다. 요청한 설정, 실제 관측, 검증한 결과를 구분한다. 누락된 관측값은 0이 아닌 `unknown`으로 남긴다. 비공개 내부 추론, 실행하지 않은 테스트, 확인하지 못한 에이전트 활동을 사실처럼 주장하지 않는다.
 
-No build, test, or lint commands are available yet. Stage 0.4 will establish them; do not invent commands now. Define acceptance criteria before implementation. Add meaningful tests with behavior changes and reproduce bugs before fixing them. Record exact commands and results; passing local checks does not prove live integration. Use consistent indentation and descriptive names; language-specific formatting awaits tooling selection.
+## 에이전트 협업
 
-## Git & Security
+독립적인 위임이 도움이 될 때만 서브에이전트를 사용하며 동시 실행은 최대 3개로 제한한다. 입력·출력·담당 파일·완료 기준을 명시하고 같은 파일의 동시 수정 담당자를 중복 지정하지 않는다. 검증과 리뷰는 구현과 독립적으로 수행한다. 실제 에이전트 ID·작업·종료 상태를 기록한다. 조사·검증 에이전트 쌍은 0.2에서 시작하며, 리더가 전달한 메시지를 직접 통신으로 표현하지 않는다.
 
-Follow the workflow and Conventional Commits in [CONTRIBUTING.md](CONTRIBUTING.md). After the bootstrap commit, use one issue, one branch, and one PR per objective. Only the owner decides merges. Stage explicit files; never force-push, delete repositories, publish releases, or change external account permissions without authorization.
+## 개발과 검증
 
-Follow [SECURITY.md](SECURITY.md). Never publish credentials, private conversations, or raw execution logs. Prefer synthetic fixtures. Default the eventual analyzer to read-only operation; model calls and code changes require explicit actions. Preserve sandbox restrictions. Import legacy code only after license/security review in a separate PR.
+현재 실행 가능한 빌드·테스트·린트 명령은 없다. 0.4에서 구성하기 전까지 명령을 지어내지 않는다. 구현 전에 완료 기준을 정의하고, 동작 변경에는 의미 있는 테스트를 추가하며 오류를 재현한 뒤 수정한다. 실제 명령과 결과를 기록한다. 로컬 검사 통과만으로 실환경 연동 성공을 주장하지 않는다. 들여쓰기와 이름을 일관되게 유지하고 언어별 형식 규칙은 도구 선정 시 정한다.
 
-## Completion Report
+## Git과 보안
 
-Report completed scope, changed files, commit SHA/PR status, actual checks, unresolved problems, and the next step. Identify blocked and unverified work explicitly, then stop.
+[기여 지침](CONTRIBUTING.md)의 절차와 Conventional Commits를 따른다. 초기 구성 이후에는 목표 하나에 Issue 하나·브랜치 하나·PR 하나를 사용한다. 병합은 소유자가 결정한다. 검토한 파일만 명시적으로 스테이징한다. 승인 없이 강제 push, 저장소 삭제, Release 발행, 외부 계정 권한 변경을 하지 않는다.
+
+[보안 지침](SECURITY.md)에 따라 인증 정보, 개인 대화와 원본 실행 로그를 공개하지 않는다. 공개 테스트에는 합성 데이터를 우선 사용한다. 향후 분석기는 읽기 전용을 기본으로 하고 모델 호출·코드 변경은 별도 명시적 동작으로 구분한다. 샌드박스 제한을 유지한다. 과거 코드는 라이선스·보안 검토를 거친 뒤 별도 PR로 이식한다.
+
+## 완료 보고
+
+완료 범위, 변경 파일, 커밋 SHA·PR 상태, 실제 검증, 발견한 문제와 다음 작업을 한국어로 보고한다. 차단되거나 확인하지 못한 작업을 구분하고 보고 후 멈춘다.

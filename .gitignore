@@ -1,4 +1,4 @@
-# Credentials and local machine configuration
+# 인증 정보와 로컬 환경 설정
 .env
 .env.*
 !.env.example
@@ -13,7 +13,7 @@ credentials.json
 *.p12
 *.pfx
 
-# Private execution data and local databases (public fixtures must be synthetic)
+# 비공개 실행 기록과 로컬 DB (공개 테스트 자료는 합성 데이터 사용)
 /.local/
 /local-data/
 /raw-logs/
@@ -35,7 +35,7 @@ credentials.json
 *.sqlite3-shm
 *.sqlite3-journal
 
-# Dependency, build, and tool output
+# 의존성·빌드·개발 도구 산출물
 node_modules/
 dist/
 build/
@@ -43,7 +43,7 @@ coverage/
 .cache/
 *.tsbuildinfo
 
-# OS and editor-local files
+# 운영체제·편집기의 로컬 파일
 .DS_Store
 Thumbs.db
 .idea/
