@@ -8,11 +8,17 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**Development tooling and CI are in progress (stage 0.4).** There is no installable application, CLI, collector, report generator, or desktop UI yet. Basic tests check repository documents and ignore rules. Check the relevant PR for actual CI results. The basic checks do not call a model.
+**The stage 1 collection foundation is in progress.** The first library feature reads values and line numbers from a user-selected JSONL file and reports malformed lines. It does not modify the source or call a model. There is no installable application, CLI, event normalization, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
 
 The intended first environment is Windows 11 with WSL2 Ubuntu and Codex CLI. Support has not been validated. Windows without WSL, Linux, and macOS are future targets.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
+
+### Current JSONL reader scope
+
+The library's `readJsonlFile(path, options)` returns JSON values in order with one-based line numbers. It skips blank lines and preserves duplicates. Malformed JSON, invalid UTF-8, and oversized lines produce diagnostics without source content, and reading continues on the next line. A leading BOM is diagnosed as `invalid_json`. The default limit is 8 MiB of raw bytes per line, excluding LF and including CR, and can be changed with `maxLineBytes`. File read failures raise a `JsonlReadError` without the file path.
+
+Returned values are unnormalized JSON of type `unknown` and may contain sensitive content. Only JSONL reading is supported; provenance, completeness, and compatibility with actual Codex stored-record formats require separate verification. It does not run the CLI or discover existing sessions automatically.
 
 ## What we intend to measure
 
@@ -50,8 +56,8 @@ Each substage requires a separate explicit request; completion of one does not a
 | 0.1 | Completed: public repository and minimum project documents |
 | 0.2 | Completed: independent prior-art research and hypotheses |
 | 0.3 | Completed: core/UI boundaries and evidence model design |
-| 0.4 | In progress: development tooling, issue/PR templates, and CI |
-| 1 | Model-free import, normalization, thread linkage, and JSON export |
+| 0.4 | Completed: development tooling, issue/PR templates, and CI |
+| 1 | In progress: model-free import, normalization, thread linkage, and JSON export |
 | 2 | Evidence-backed efficiency reports in JSON and HTML |
 | 3 | Explicit team selection and explainable rule-based recommendations |
 | 4 | Reproducible experiments comparing quality, time, and observed usage |

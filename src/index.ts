@@ -1,2 +1,2 @@
-// 추후 코어 모듈의 공개 진입점. 현재는 기능을 내보내지 않는다.
-export {};
+export { JsonlReadError, readJsonlFile } from "./adapters/jsonl-reader.js";
+export type { JsonlReadOptions, JsonlReadResult } from "./adapters/jsonl-reader.js";
