@@ -3,6 +3,7 @@ import { readJsonlFile } from "../adapters/jsonl-reader.js";
 import { normalizeCodexExecLine } from "../adapters/codex-exec-normalizer.js";
 import { exportNormalizationJson } from "../core/json-export.js";
 import { findSourceOverlaps } from "../core/source-overlap.js";
+import { groupItemObservations } from "../core/item-observations.js";
 import type { NormalizationResult } from "../core/events.js";
 
 export interface CliResult {
@@ -31,18 +32,53 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "사용법: node dist/cli/main.js <JSONL 파일> [출처_별칭]",
         "새 파일 저장: node dist/cli/main.js --output <JSONL 파일> <새 JSON 파일> [출처_별칭]",
         "입력 요약: node dist/cli/main.js --summary <JSONL 파일>",
+        "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "중복 후보: node dist/cli/main.js --overlaps <출처_별칭> <JSONL 파일> <JSONL 파일> [...]",
         "도움말: node dist/cli/main.js --help 또는 -h",
-        "출처 별칭: 일반 입력은 선택, 중복 후보 조회는 필수. 영문자·숫자·밑줄·하이픈 1~64자.",
+        "출처 별칭: 일반 입력은 선택, 중복·항목 후보 조회는 필수. 영문자·숫자·밑줄·하이픈 1~64자.",
         "결과는 표준 출력으로 제공되며 민감한 식별자가 포함될 수 있습니다.",
         "출력 리디렉션 시 원본과 다른 파일을 지정하세요.",
         "--output은 기존 파일을 덮어쓰지 않으며, 저장 실패 시 부분 파일이 남을 수 있습니다.",
         "중복 후보는 정규화 결과 비교이며 원본의 동일성을 증명하지 않습니다.",
+        "항목 관측 후보는 실제 항목이나 실행의 동일성을 증명하지 않습니다.",
         "입력 요약은 중복을 포함한 정규화 결과 수이며 실제 고유 이벤트 수가 아닙니다.",
         "",
       ].join("\n"),
       stderr: "",
     };
+  }
+  if (args[0] === "--items") {
+    if (args.length !== 3 || !args[1] || args[1].startsWith("-") || !args[2] ||
+        args.includes("--help") || args.includes("-h")) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --items <JSONL 파일> <출처_별칭>\n" };
+    }
+    const path = args[1];
+    const sourceId = args[2];
+    try {
+      normalizeCodexExecLine({ kind: "diagnostic", line: 1, code: "invalid_json" }, sourceId);
+      const results: NormalizationResult[] = [];
+      for await (const entry of readJsonlFile(path)) results.push(normalizeCodexExecLine(entry, sourceId));
+      const evidence = groupItemObservations(results);
+      const unassociated = evidence.unassociated.map((entry) => {
+        const result = results[entry.index];
+        if (!result || result.kind !== "event") throw new Error("잘못된 항목 인덱스입니다.");
+        return { ...entry, line: result.event.source.line };
+      });
+      const diagnostics: { index: number; line: number; code: string }[] = [];
+      const unsupported: { index: number; line: number; reason: string }[] = [];
+      const otherEventIndices: number[] = [];
+      for (const [index, result] of results.entries()) {
+        if (result.kind === "diagnostic") diagnostics.push({ index, line: result.source.line, code: result.code });
+        else if (result.kind === "unsupported") unsupported.push({ index, line: result.source.line, reason: result.reason });
+        else if (result.event.event_type !== "item.started" && result.event.event_type !== "item.completed") otherEventIndices.push(index);
+      }
+      return { exitCode: 0, stdout: `${JSON.stringify({
+        format: "agent-slity.item-observations", version: 1, verification_status: evidence.verification_status,
+        groups: evidence.groups, unassociated, diagnostics, unsupported, other_event_indices: otherEventIndices,
+      })}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "입력을 처리할 수 없습니다. 파일과 출처 별칭을 확인하세요.\n" };
+    }
   }
   if (args[0] === "--output") {
     const input = args[1];

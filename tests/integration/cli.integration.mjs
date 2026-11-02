@@ -151,6 +151,67 @@ test("중복 후보 조회의 인수·파일 오류는 부분 JSON과 원문 없
   }
 });
 
+test("항목 후보 조회는 역순·중복·유형과 스레드 차이를 보존한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-items-"));
+  const path = join(dir, "input.jsonl");
+  const input = [
+    '{"type":"turn.started"}',
+    '{"type":"item.completed","thread_id":"thread-b","item":{"id":"synthetic-item","type":"agent_message","text":"PRIVATE_MESSAGE"}}',
+    '{"type":"item.started","thread_id":"thread-a","item":{"id":"synthetic-item","type":"command_execution","command":"PRIVATE_COMMAND"}}',
+    '{"type":"item.started","thread_id":"thread-a","item":{"id":"synthetic-item","type":"command_execution"}}',
+    '{"type":"item.started","item":{"type":"agent_message"}}',
+    "{",
+    '{"type":"future.event"}',
+    "",
+  ].join("\n");
+  await writeFile(path, input);
+  try {
+    const result = run(["--items", path, "sample"]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      format: "agent-slity.item-observations", version: 1, verification_status: "unverified",
+      groups: [{ source_id: "sample", item_id: "synthetic-item", observations: [
+        { index: 1, line: 2, event_type: "item.completed", item_type: "agent_message", thread_id: "thread-b" },
+        { index: 2, line: 3, event_type: "item.started", item_type: "command_execution", thread_id: "thread-a" },
+        { index: 3, line: 4, event_type: "item.started", item_type: "command_execution", thread_id: "thread-a" },
+      ] }], unassociated: [{ index: 4, reason: "missing_item_id", line: 5 }],
+      diagnostics: [{ index: 5, line: 6, code: "invalid_json" }],
+      unsupported: [{ index: 6, line: 7, reason: "unsupported_event_type" }],
+      other_event_indices: [0],
+    });
+    assert.ok(!result.stdout.includes("PRIVATE_"));
+    assert.ok(!result.stdout.includes(path));
+    assert.equal(await readFile(path, "utf8"), input);
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
+
+test("항목 후보 조회의 인수·파일 오류는 원문과 부분 JSON 없이 실패한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-items-error-"));
+  const missing = join(dir, "PRIVATE_MISSING.jsonl");
+  const fixture = resolve("tests/fixtures/demo.jsonl");
+  try {
+    for (const testCase of [
+      { args: ["--items", fixture], status: 2 },
+      { args: ["--items", fixture, "PRIVATE/ALIAS"], status: 1 },
+      { args: ["--items", missing, "sample"], status: 1 },
+    ]) {
+      const result = run(testCase.args);
+      assert.equal(result.error, undefined);
+      assert.equal(result.status, testCase.status);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes("PRIVATE"));
+      assert.ok(!result.stderr.includes(missing));
+    }
+  } finally {
+    await rmdir(dir);
+  }
+});
+
 test("입력 요약은 중복을 포함한 정규화 결과와 진단·미지원을 집계한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-summary-"));
   const path = join(dir, "input.jsonl");
