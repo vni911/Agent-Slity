@@ -149,3 +149,56 @@ test("중복 후보 조회의 인수·파일 오류는 부분 JSON과 원문 없
     await rmdir(missingDir);
   }
 });
+
+test("입력 요약은 중복을 포함한 정규화 결과와 진단·미지원을 집계한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-summary-"));
+  const path = join(dir, "input.jsonl");
+  const input = '{"type":"turn.started","text":"PRIVATE_MESSAGE"}\n\n{"type":"turn.started"}\n{\n{"type":"future.event"}\n';
+  await writeFile(path, input);
+  try {
+    const result = run(["--summary", path]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      format: "agent-slity.input-summary", version: 1, verification_status: "unverified",
+      count_semantics: "normalized_results_including_duplicates", total_results: 4,
+      event_types: { "turn.started": 2 }, unsupported_reasons: { unsupported_event_type: 1 },
+      diagnostic_codes: { invalid_json: 1 },
+    });
+    assert.ok(!result.stdout.includes(path));
+    assert.ok(!result.stdout.includes("PRIVATE_MESSAGE"));
+    assert.equal(await readFile(path, "utf8"), input);
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
+
+test("빈 입력 요약은 0과 빈 분류를 반환하고 잘못된 입력은 실패한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-empty-"));
+  const path = join(dir, "empty.jsonl");
+  const missing = join(dir, "PRIVATE_MISSING.jsonl");
+  await writeFile(path, "\n");
+  try {
+    const result = run(["--summary", path]);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      format: "agent-slity.input-summary", version: 1, verification_status: "unverified",
+      count_semantics: "normalized_results_including_duplicates", total_results: 0,
+      event_types: {}, unsupported_reasons: {}, diagnostic_codes: {},
+    });
+    const noPath = run(["--summary"]);
+    assert.equal(noPath.status, 2);
+    assert.equal(noPath.stdout, "");
+    const absent = run(["--summary", missing]);
+    assert.equal(absent.status, 1);
+    assert.equal(absent.stdout, "");
+    assert.ok(!absent.stderr.includes("PRIVATE_MISSING"));
+    assert.equal(await readFile(path, "utf8"), "\n");
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
