@@ -7,3 +7,5 @@ export { findSourceOverlaps } from "./core/source-overlap.js";
 export type { SourceOverlap } from "./core/source-overlap.js";
 export { groupItemObservations } from "./core/item-observations.js";
 export type { ItemObservation, ItemObservationGroup, ItemObservationResult } from "./core/item-observations.js";
+export { groupThreadObservations } from "./core/thread-observations.js";
+export type { ThreadObservation, ThreadObservationGroup, ThreadObservationResult } from "./core/thread-observations.js";

@@ -30,6 +30,8 @@ An item event's explicit `item.id` is preserved as `payload.item_id`. It is dist
 
 `groupItemObservations(results)` groups item events with the same source alias and item ID as review candidates, preserving input indices, line numbers, event types, item types, and explicit thread IDs. Item events without an alias or ID are listed separately with the reason. Matching values do not prove the same actual item or run; duplicates, reversed order, and differing item types are preserved. Results are unverified and identifiers may be sensitive. It copies all results into memory, so use care with large inputs.
 
+`groupThreadObservations(results)` groups events with the same explicitly provided thread ID and source alias as review candidates, preserving positions and item evidence. Events without IDs are not attached to a preceding thread and are listed with the reason. Diagnostics and unsupported records are listed separately. Matching values do not prove the same actual thread or a parent-child relationship. Identifiers may be sensitive, and all results are copied in memory. This function is not yet connected to the CLI.
+
 Pass an optional source alias, for example `normalizeCodexExecLine(line, "source_1")`, to preserve it on events, diagnostics, and unsupported results. Aliases use 1–64 ASCII letters, digits, underscores, or hyphens; omission yields `null`. Callers must manage distinct aliases per file and must not include paths or sensitive information.
 
 File contents and aliases are not authenticated, so `verification_status` is `unverified`. Format version and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
