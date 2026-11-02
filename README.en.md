@@ -28,6 +28,8 @@ Pass an optional source alias, for example `normalizeCodexExecLine(line, "source
 
 File contents and aliases are not authenticated, so `verification_status` is `unverified`. Format version and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
 
+`exportNormalizationJson(results)` returns a versioned JSON string from an array of normalization results. It preserves event, diagnostic, and unsupported-result order and duplicates without writing a file. The whole result is held in memory, so use care with large inputs. Review the output before sharing: thread IDs and source aliases may contain sensitive data.
+
 ## What we intend to measure
 
 - Repeated file, documentation, and command exploration across agents.
