@@ -44,6 +44,27 @@ test("인수 누락은 사용법과 종료 코드 2를 반환한다", () => {
   assert.match(result.stderr, /사용법/);
 });
 
+test("도움말 옵션은 단독 실행 시 표준 출력과 종료 코드 0을 반환한다", () => {
+  for (const option of ["--help", "-h"]) {
+    const result = run([option]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.match(result.stdout, /사용법/);
+    assert.match(result.stdout, /1~64자/);
+    assert.match(result.stdout, /표준 출력/);
+    assert.match(result.stdout, /민감한 식별자/);
+    assert.match(result.stdout, /원본과 다른 파일/);
+    const mixed = run([option, "PRIVATE_EXTRA"]);
+    assert.equal(mixed.status, 2);
+    assert.equal(mixed.stdout, "");
+    assert.ok(!mixed.stderr.includes("PRIVATE_EXTRA"));
+    const trailing = run([resolve("tests/fixtures/demo.jsonl"), option]);
+    assert.equal(trailing.status, 2);
+    assert.equal(trailing.stdout, "");
+  }
+});
+
 test("존재하지 않는 파일은 경로 없이 실패한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-missing-"));
   const path = join(dir, "PRIVATE_SYNTHETIC_MISSING.jsonl");
