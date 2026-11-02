@@ -28,7 +28,8 @@ export interface NormalizedEvent {
   source: EventSource;
   /** 파일의 주장만으로 실제 실행의 진위를 검증할 수 없다. */
   verification_status: "unverified";
-  payload: { usage: ObservedUsage };
+  /** 이전 결과에는 item_type이 없을 수 있다. */
+  payload: { item_type?: "command_execution" | "agent_message" | null; usage: ObservedUsage };
 }
 
 export type NormalizationResult =

@@ -15,7 +15,7 @@ function run(args) {
 test("빌드된 CLI가 합성 입력을 읽고 진단까지 출력하며 원본을 보존한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-integration-"));
   const path = join(dir, "input.jsonl");
-  const input = '{"type":"thread.started","thread_id":"synthetic"}\n{\n{"type":"future.event"}\n';
+  const input = '{"type":"thread.started","thread_id":"synthetic"}\n{"type":"item.started","item":{"type":"command_execution","command":"PRIVATE_COMMAND"}}\n{\n{"type":"future.event"}\n';
   await writeFile(path, input);
   try {
     const result = run([path, "sample_1"]);
@@ -25,10 +25,12 @@ test("빌드된 CLI가 합성 입력을 읽고 진단까지 출력하며 원본�
     const json = JSON.parse(result.stdout);
     assert.equal(json.format, "agent-slity.normalization-results");
     assert.equal(json.version, 1);
-    assert.deepEqual(json.results.map((entry) => entry.kind), ["event", "diagnostic", "unsupported"]);
+    assert.deepEqual(json.results.map((entry) => entry.kind), ["event", "event", "diagnostic", "unsupported"]);
     assert.equal(json.results[0].event.source.source_id, "sample_1");
     assert.equal(json.results[0].event.thread_id, "synthetic");
-    assert.equal(json.results[1].code, "invalid_json");
+    assert.equal(json.results[1].event.payload.item_type, "command_execution");
+    assert.ok(!result.stdout.includes("PRIVATE_COMMAND"));
+    assert.equal(json.results[2].code, "invalid_json");
     assert.equal(await readFile(path, "utf8"), input);
   } finally {
     await unlink(path);
