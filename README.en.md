@@ -32,7 +32,7 @@ File contents and aliases are not authenticated, so `verification_status` is `un
 
 `exportNormalizationJson(results)` returns a versioned JSON string from an array of normalization results. It preserves event, diagnostic, and unsupported-result order and duplicates without writing a file. The whole result is held in memory, so use care with large inputs. Review the output before sharing: thread IDs and source aliases may contain sensitive data.
 
-`findSourceOverlaps(results)` reports repeated source-alias and line-number candidates using zero-based input indices. `matching_normalized` means only that normalized results match; it does not establish identical source records or actual events. Groups with differences are marked `conflict`, and no input is removed. Records without an alias are not compared; callers must manage distinct aliases per file. It copies all results into memory, so use care with large inputs. This function is not yet connected to the CLI.
+`findSourceOverlaps(results)` reports repeated source-alias and line-number candidates using zero-based input indices. `matching_normalized` means only that normalized results match; it does not establish identical source records or actual events. Groups with differences are marked `conflict`, and no input is removed. Records without an alias are not compared; callers must manage aliases per source. It copies all results into memory, so use care with large inputs.
 
 ## What we intend to measure
 
@@ -69,7 +69,15 @@ node dist/cli/main.js tests/fixtures/demo.jsonl demo
 
 Run `node dist/cli/main.js --help` to see usage and precautions.
 
-Replace the path with a JSONL file you choose. The second argument is an optional source alias. Results are written only to standard output and held entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
+Compare position-overlap candidates from records you identify as the same source. This example reads the synthetic fixture twice:
+
+```sh
+node dist/cli/main.js --overlaps demo tests/fixtures/demo.jsonl tests/fixtures/demo.jsonl
+```
+
+The `inputs` array gives each input's starting index and result count. Indices are zero-based in the normalized results after blank lines are skipped. `matching_normalized` does not prove identical source records; reusing an alias for different sources may produce misleading candidates. Paths and raw content are not printed, and inputs are not deleted.
+
+For the single-file command, replace the path with a JSONL file you choose; the second argument is an optional source alias. Results are written only to standard output and held entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
 ## Roadmap
 
