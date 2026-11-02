@@ -55,7 +55,7 @@ npm ci
 npm run check
 ```
 
-`npm run check` runs type checking, linting, tests, and build in sequence. On Windows PowerShell, use `npm.cmd` if needed. See the [contribution workflow](CONTRIBUTING.md) and [agent guidelines](AGENTS.md).
+`npm run check` runs type checking, linting, unit tests, build, and CLI process integration tests in sequence. To run integration tests separately, run `npm run build` first, then `npm run test:integration`. On Windows PowerShell, use `npm.cmd` if needed. See the [contribution workflow](CONTRIBUTING.md) and [agent guidelines](AGENTS.md).
 
 Run the synthetic example without a model call:
 
