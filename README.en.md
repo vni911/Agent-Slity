@@ -8,7 +8,7 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**The stage 1 collection foundation is in progress.** The first library feature reads values and line numbers from a user-selected JSONL file and reports malformed lines. It does not modify the source or call a model. There is no installable application, CLI, event normalization, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
+**The stage 1 collection foundation is in progress.** The library reads a user-selected JSONL file and normalizes a limited set of Codex execution events. It does not modify the source or call a model. There is no installable application, CLI, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
 
 The intended first environment is Windows 11 with WSL2 Ubuntu and Codex CLI. Support has not been validated. Windows without WSL, Linux, and macOS are future targets.
 
@@ -18,7 +18,13 @@ The project name is Agent Slity and the repository name is `Agent-Slity`. This i
 
 The library's `readJsonlFile(path, options)` returns JSON values in order with one-based line numbers. It skips blank lines and preserves duplicates. Malformed JSON, invalid UTF-8, and oversized lines produce diagnostics without source content, and reading continues on the next line. A leading BOM is diagnosed as `invalid_json`. The default limit is 8 MiB of raw bytes per line, excluding LF and including CR, and can be changed with `maxLineBytes`. File read failures raise a `JsonlReadError` without the file path.
 
-Returned values are unnormalized JSON of type `unknown` and may contain sensitive content. Only JSONL reading is supported; provenance, completeness, and compatibility with actual Codex stored-record formats require separate verification. It does not run the CLI or discover existing sessions automatically.
+Reader values are raw JSON of type `unknown` and may contain sensitive content. Provenance, completeness, and compatibility with actual Codex stored-record formats require separate verification. It does not run the CLI or discover existing sessions automatically.
+
+### Current event normalization scope
+
+`normalizeCodexExecLine` accepts one reader result and maps only a limited set of event types shown in the official `codex exec --json` documentation. It copies explicit thread IDs and completed-turn usage only, keeps unknown fields as `null`, and preserves an actual zero. Raw messages and commands are excluded. Unsupported inputs and damaged-line diagnostics are returned separately with line numbers.
+
+File contents are not authenticated, so `verification_status` is `unverified`. A per-file source ID, format version, and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
 
 ## What we intend to measure
 
