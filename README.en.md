@@ -24,7 +24,9 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 `normalizeCodexExecLine` accepts one reader result and maps only a limited set of event types shown in the official `codex exec --json` documentation. It copies explicit thread IDs and completed-turn usage only, keeps unknown fields as `null`, and preserves an actual zero. Raw messages and commands are excluded. Unsupported inputs and damaged-line diagnostics are returned separately with line numbers.
 
-File contents are not authenticated, so `verification_status` is `unverified`. A per-file source ID, format version, and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
+Pass an optional source alias, for example `normalizeCodexExecLine(line, "source_1")`, to preserve it on events, diagnostics, and unsupported results. Aliases use 1–64 ASCII letters, digits, underscores, or hyphens; omission yields `null`. Callers must manage distinct aliases per file and must not include paths or sensitive information.
+
+File contents and aliases are not authenticated, so `verification_status` is `unverified`. Format version and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
 
 ## What we intend to measure
 
