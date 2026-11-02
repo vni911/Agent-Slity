@@ -32,6 +32,8 @@ File contents and aliases are not authenticated, so `verification_status` is `un
 
 `exportNormalizationJson(results)` returns a versioned JSON string from an array of normalization results. It preserves event, diagnostic, and unsupported-result order and duplicates without writing a file. The whole result is held in memory, so use care with large inputs. Review the output before sharing: thread IDs and source aliases may contain sensitive data.
 
+`findSourceOverlaps(results)` reports repeated source-alias and line-number candidates using zero-based input indices. `matching_normalized` means only that normalized results match; it does not establish identical source records or actual events. Groups with differences are marked `conflict`, and no input is removed. Records without an alias are not compared; callers must manage distinct aliases per file. It copies all results into memory, so use care with large inputs. This function is not yet connected to the CLI.
+
 ## What we intend to measure
 
 - Repeated file, documentation, and command exploration across agents.
