@@ -69,6 +69,16 @@ node dist/cli/main.js tests/fixtures/demo.jsonl demo
 
 Run `node dist/cli/main.js --help` to see usage and precautions.
 
+To save normalized JSON to a new file, explicitly use `--output`:
+
+```sh
+node dist/cli/main.js --output tests/fixtures/demo.jsonl demo-result.json demo
+```
+
+The input is processed before a new output file is created; existing files and the input are not overwritten. A failed write may leave a partial new file. On POSIX, creation requests mode 0600; permission handling differs on Windows, so check file access permissions yourself. Output may contain sensitive identifiers and must be reviewed before sharing.
+
+On Windows, alternate data streams and device paths are rejected as output targets.
+
 Summarize event types, unsupported reasons, and diagnostic codes read from an input:
 
 ```sh
@@ -85,7 +95,7 @@ node dist/cli/main.js --overlaps demo tests/fixtures/demo.jsonl tests/fixtures/d
 
 The `inputs` array gives each input's starting index and result count. Indices are zero-based in the normalized results after blank lines are skipped. `matching_normalized` does not prove identical source records; reusing an alias for different sources may produce misleading candidates. Paths and raw content are not printed, and inputs are not deleted.
 
-For the single-file command, replace the path with a JSONL file you choose; the second argument is an optional source alias. Results are written only to standard output and held entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
+For the normal single-file command, replace the path with a JSONL file you choose; the second argument is an optional source alias. This command uses standard output and holds results entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
 ## Roadmap
 

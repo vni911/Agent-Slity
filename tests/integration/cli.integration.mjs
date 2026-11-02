@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rmdir, unlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rmdir, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
@@ -199,6 +199,114 @@ test("빈 입력 요약은 0과 빈 분류를 반환하고 잘못된 입력은 �
     assert.equal(await readFile(path, "utf8"), "\n");
   } finally {
     await unlink(path);
+    await rmdir(dir);
+  }
+});
+
+test("명시적 저장은 새 파일에만 정규화 JSON을 쓰고 입력을 보존한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-output-"));
+  const input = join(dir, "input.jsonl");
+  const output = join(dir, "output.json");
+  const original = '{"type":"thread.started","thread_id":"synthetic"}\n';
+  await writeFile(input, original);
+  try {
+    const result = run(["--output", input, output, "sample"]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.ok(!result.stdout.includes(output));
+    const json = JSON.parse(await readFile(output, "utf8"));
+    assert.equal(json.format, "agent-slity.normalization-results");
+    assert.equal(json.results[0].event.source.source_id, "sample");
+    assert.equal(await readFile(input, "utf8"), original);
+    if (process.platform !== "win32") assert.equal((await stat(output)).mode & 0o077, 0);
+  } finally {
+    await unlink(output);
+    await unlink(input);
+    await rmdir(dir);
+  }
+});
+
+test("기존 파일과 입력 경로는 출력으로 덮어쓰지 않는다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-no-overwrite-"));
+  const input = join(dir, "input.jsonl");
+  const output = join(dir, "existing.json");
+  const original = '{"type":"turn.started"}\n';
+  await writeFile(input, original);
+  await writeFile(output, "KEEP_EXISTING");
+  try {
+    for (const target of [input, output]) {
+      const result = run(["--output", input, target]);
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes(target));
+    }
+    assert.equal(await readFile(input, "utf8"), original);
+    assert.equal(await readFile(output, "utf8"), "KEEP_EXISTING");
+  } finally {
+    await unlink(output);
+    await unlink(input);
+    await rmdir(dir);
+  }
+});
+
+test("입력 오류와 잘못된 별칭은 출력 파일을 만들지 않는다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-output-error-"));
+  const output = join(dir, "not-created.json");
+  const missing = join(dir, "PRIVATE_MISSING.jsonl");
+  try {
+    for (const args of [
+      ["--output", missing, output],
+      ["--output", resolve("tests/fixtures/demo.jsonl"), output, "PRIVATE/ALIAS"],
+    ]) {
+      const result = run(args);
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes("PRIVATE"));
+      await assert.rejects(stat(output), { code: "ENOENT" });
+    }
+    assert.equal(run(["--output", missing]).status, 2);
+  } finally {
+    await rmdir(dir);
+  }
+});
+
+test("기존 심볼릭 링크를 출력으로 덮어쓰지 않는다", { skip: process.platform === "win32" }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-output-link-"));
+  const input = join(dir, "input.jsonl");
+  const target = join(dir, "target.json");
+  const link = join(dir, "link.json");
+  await writeFile(input, '{"type":"turn.started"}\n');
+  await writeFile(target, "KEEP_TARGET");
+  await symlink(target, link);
+  try {
+    const result = run(["--output", input, link]);
+    assert.equal(result.status, 1);
+    assert.equal(await readFile(target, "utf8"), "KEEP_TARGET");
+  } finally {
+    await unlink(link);
+    await unlink(target);
+    await unlink(input);
+    await rmdir(dir);
+  }
+});
+
+test("Windows 대체 데이터 스트림을 출력으로 만들지 않는다", { skip: process.platform !== "win32" }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-output-ads-"));
+  const input = join(dir, "input.jsonl");
+  const ads = `${input}:agenttest`;
+  const original = '{"type":"turn.started"}\n';
+  await writeFile(input, original);
+  try {
+    const result = run(["--output", input, ads]);
+    assert.equal(result.status, 2);
+    assert.equal(result.stdout, "");
+    assert.ok(!result.stderr.includes(ads));
+    assert.equal(await readFile(input, "utf8"), original);
+    await assert.rejects(stat(ads), { code: "ENOENT" });
+    assert.equal(run(["--output", input, "NUL"]).status, 2);
+  } finally {
+    await unlink(input);
     await rmdir(dir);
   }
 });
