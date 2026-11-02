@@ -63,6 +63,8 @@ Run the synthetic example without a model call:
 node dist/cli/main.js tests/fixtures/demo.jsonl demo
 ```
 
+Run `node dist/cli/main.js --help` to see usage and precautions.
+
 Replace the path with a JSONL file you choose. The second argument is an optional source alias. Results are written only to standard output and held entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
 ## Roadmap
