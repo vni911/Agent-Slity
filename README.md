@@ -69,6 +69,14 @@ node dist/cli/main.js tests/fixtures/demo.jsonl demo
 
 실행법과 주의사항은 `node dist/cli/main.js --help`로도 확인할 수 있습니다.
 
+입력에서 읽힌 이벤트 유형, 미지원 사유와 진단 코드의 건수는 다음 명령으로 확인합니다.
+
+```sh
+node dist/cli/main.js --summary tests/fixtures/demo.jsonl
+```
+
+이 숫자는 빈 줄을 제외한 정규화 결과 수이며 중복을 포함합니다. 실제 고유 이벤트 수나 기록 누락률을 뜻하지 않고, 파일의 진위도 확인하지 않습니다. 파일을 순서대로 읽어 집계하며 원문과 경로는 출력하지 않습니다.
+
 동일 출처라고 사용자가 지정한 두 기록의 위치 중복 후보를 확인할 수 있습니다. 다음 명령은 같은 합성 예제를 두 번 읽습니다.
 
 ```sh

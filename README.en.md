@@ -69,6 +69,14 @@ node dist/cli/main.js tests/fixtures/demo.jsonl demo
 
 Run `node dist/cli/main.js --help` to see usage and precautions.
 
+Summarize event types, unsupported reasons, and diagnostic codes read from an input:
+
+```sh
+node dist/cli/main.js --summary tests/fixtures/demo.jsonl
+```
+
+Counts describe normalized results read after blank lines are skipped and include duplicates. They do not establish unique event counts, missing-record rates, or source authenticity. The command aggregates as it reads and does not print raw content or paths.
+
 Compare position-overlap candidates from records you identify as the same source. This example reads the synthetic fixture twice:
 
 ```sh
