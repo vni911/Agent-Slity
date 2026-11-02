@@ -91,3 +91,61 @@ test("잘못된 별칭은 원문 없이 실패한다", () => {
   assert.ok(result.stderr);
   assert.ok(!result.stderr.includes("PRIVATE/ALIAS"));
 });
+
+test("동일 출처로 지정한 여러 입력의 후보와 충돌을 원본 삭제 없이 표시한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-overlaps-"));
+  const firstPath = join(dir, "first.jsonl");
+  const secondPath = join(dir, "second.jsonl");
+  const first = '{"type":"turn.started"}\n{"type":"turn.started"}\n\n';
+  const second = '{"type":"turn.started"}\n{"type":"turn.completed"}\n\n';
+  await writeFile(firstPath, first);
+  await writeFile(secondPath, second);
+  try {
+    const result = run(["--overlaps", "sample", firstPath, secondPath]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    const json = JSON.parse(result.stdout);
+    assert.equal(json.format, "agent-slity.source-overlaps");
+    assert.equal(json.version, 1);
+    assert.deepEqual(json.inputs, [
+      { input_index: 0, start_index: 0, result_count: 2 },
+      { input_index: 1, start_index: 2, result_count: 2 },
+    ]);
+    assert.deepEqual(json.overlaps, [
+      { source_id: "sample", line: 1, indices: [0, 2], status: "matching_normalized" },
+      { source_id: "sample", line: 2, indices: [1, 3], status: "conflict" },
+    ]);
+    assert.ok(!result.stdout.includes(firstPath));
+    assert.ok(!result.stdout.includes(secondPath));
+    assert.equal(await readFile(firstPath, "utf8"), first);
+    assert.equal(await readFile(secondPath, "utf8"), second);
+  } finally {
+    await unlink(firstPath);
+    await unlink(secondPath);
+    await rmdir(dir);
+  }
+});
+
+test("중복 후보 조회의 인수·파일 오류는 부분 JSON과 원문 없이 실패한다", async () => {
+  const fixture = resolve("tests/fixtures/demo.jsonl");
+  const missingDir = await mkdtemp(join(tmpdir(), "agent-slity-overlap-missing-"));
+  const missing = join(missingDir, "PRIVATE_MISSING.jsonl");
+  try {
+    const cases = [
+      { args: ["--overlaps", "sample", fixture], status: 2 },
+      { args: ["--overlaps", "PRIVATE/ALIAS", fixture, fixture], status: 1 },
+      { args: ["--overlaps", "sample", fixture, missing], status: 1 },
+    ];
+    for (const testCase of cases) {
+      const result = run(testCase.args);
+      assert.equal(result.error, undefined);
+      assert.equal(result.status, testCase.status);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes("PRIVATE"));
+      assert.ok(!result.stderr.includes(missing));
+    }
+  } finally {
+    await rmdir(missingDir);
+  }
+});
