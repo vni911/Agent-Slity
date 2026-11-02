@@ -1,0 +1,50 @@
+# Credentials and local machine configuration
+.env
+.env.*
+!.env.example
+/.codex/
+/.aws/
+/.ssh/
+/.gnupg/
+auth.json
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Private execution data and local databases (public fixtures must be synthetic)
+/.local/
+/local-data/
+/raw-logs/
+/logs/
+/sessions/
+/exports/
+*.log
+*.jsonl
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+
+# Dependency, build, and tool output
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+*.tsbuildinfo
+
+# OS and editor-local files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
