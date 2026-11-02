@@ -28,6 +28,8 @@ For item start and completion events, `payload.item_type` preserves only `comman
 
 An item event's explicit `item.id` is preserved as `payload.item_id`. It is distinct from event, thread, and agent IDs and does not prove a shared run or parent relationship. Item IDs may contain sensitive information; review them before sharing. Older results without this field export as `null`. Compatibility with existing consumers that reject additional version 1 JSON fields is unverified.
 
+`groupItemObservations(results)` groups item events with the same source alias and item ID as review candidates, preserving input indices, line numbers, event types, item types, and explicit thread IDs. Item events without an alias or ID are listed separately with the reason. Matching values do not prove the same actual item or run; duplicates, reversed order, and differing item types are preserved. Results are unverified and identifiers may be sensitive. It copies all results into memory, so use care with large inputs. This function is not yet connected to the CLI.
+
 Pass an optional source alias, for example `normalizeCodexExecLine(line, "source_1")`, to preserve it on events, diagnostics, and unsupported results. Aliases use 1–64 ASCII letters, digits, underscores, or hyphens; omission yields `null`. Callers must manage distinct aliases per file and must not include paths or sensitive information.
 
 File contents and aliases are not authenticated, so `verification_status` is `unverified`. Format version and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
