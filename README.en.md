@@ -28,7 +28,7 @@ For item start and completion events, `payload.item_type` preserves only `comman
 
 An item event's explicit `item.id` is preserved as `payload.item_id`. It is distinct from event, thread, and agent IDs and does not prove a shared run or parent relationship. Item IDs may contain sensitive information; review them before sharing. Older results without this field export as `null`. Compatibility with existing consumers that reject additional version 1 JSON fields is unverified.
 
-`groupItemObservations(results)` groups item events with the same source alias and item ID as review candidates, preserving input indices, line numbers, event types, item types, and explicit thread IDs. Item events without an alias or ID are listed separately with the reason. Matching values do not prove the same actual item or run; duplicates, reversed order, and differing item types are preserved. Results are unverified and identifiers may be sensitive. It copies all results into memory, so use care with large inputs. This function is not yet connected to the CLI.
+`groupItemObservations(results)` groups item events with the same source alias and item ID as review candidates, preserving input indices, line numbers, event types, item types, and explicit thread IDs. Item events without an alias or ID are listed separately with the reason. Matching values do not prove the same actual item or run; duplicates, reversed order, and differing item types are preserved. Results are unverified and identifiers may be sensitive. It copies all results into memory, so use care with large inputs.
 
 Pass an optional source alias, for example `normalizeCodexExecLine(line, "source_1")`, to preserve it on events, diagnostics, and unsupported results. Aliases use 1–64 ASCII letters, digits, underscores, or hyphens; omission yields `null`. Callers must manage distinct aliases per file and must not include paths or sensitive information.
 
@@ -72,6 +72,14 @@ node dist/cli/main.js tests/fixtures/demo.jsonl demo
 ```
 
 Run `node dist/cli/main.js --help` to see usage and precautions.
+
+To inspect item observation candidates, replace the path below with your JSONL file. A source alias is required.
+
+```sh
+node dist/cli/main.js --items my-run.jsonl sample
+```
+
+Results are candidates with matching aliases and item IDs; they do not prove the same run or thread relationship. Duplicates and order are preserved, and missing item IDs are reported with index and line. Diagnostics and unsupported records are listed with their positions and codes or reasons; other events are listed by index. Indices refer to normalized results after blank lines are skipped. Item and thread IDs may be sensitive, and the whole result is held in memory; use care when sharing or processing large inputs.
 
 To save normalized JSON to a new file, explicitly use `--output`:
 
