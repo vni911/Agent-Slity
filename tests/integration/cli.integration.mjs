@@ -212,6 +212,73 @@ test("항목 후보 조회의 인수·파일 오류는 원문과 부분 JSON 없
   }
 });
 
+test("스레드 후보 조회는 명시적 ID·누락·역순·중복과 진단을 보존한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-threads-"));
+  const path = join(dir, "input.jsonl");
+  const input = [
+    '{"type":"item.completed","thread_id":"child","item":{"id":"item-a","type":"agent_message","text":"PRIVATE_MESSAGE"}}',
+    '{"type":"thread.started","thread_id":"root"}',
+    '{"type":"turn.started"}',
+    '{"type":"item.started","thread_id":"root","item":{"id":"item-b","type":"command_execution","command":"PRIVATE_COMMAND"}}',
+    '{"type":"item.started","thread_id":"root","item":{"id":"item-b","type":"command_execution"}}',
+    "{",
+    '{"type":"future.event"}',
+    "",
+  ].join("\n");
+  await writeFile(path, input);
+  try {
+    const result = run(["--threads", path, "sample"]);
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      format: "agent-slity.thread-observations", version: 1, verification_status: "unverified",
+      groups: [
+        { source_id: "sample", thread_id: "child", observations: [
+          { index: 0, line: 1, event_type: "item.completed", item_id: "item-a", item_type: "agent_message" },
+        ] },
+        { source_id: "sample", thread_id: "root", observations: [
+          { index: 1, line: 2, event_type: "thread.started", item_id: null, item_type: null },
+          { index: 3, line: 4, event_type: "item.started", item_id: "item-b", item_type: "command_execution" },
+          { index: 4, line: 5, event_type: "item.started", item_id: "item-b", item_type: "command_execution" },
+        ] },
+      ],
+      unassociated: [{ index: 2, line: 3, event_type: "turn.started", item_id: null, item_type: null,
+        source_id: "sample", thread_id: null, reason: "missing_thread_id" }],
+      diagnostics: [{ index: 5, line: 6, source_id: "sample", code: "invalid_json" }],
+      unsupported: [{ index: 6, line: 7, source_id: "sample", reason: "unsupported_event_type" }],
+    });
+    assert.ok(!result.stdout.includes("PRIVATE_"));
+    assert.ok(!result.stdout.includes(path));
+    assert.equal(await readFile(path, "utf8"), input);
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
+
+test("스레드 후보 조회의 인수·파일 오류는 원문과 부분 JSON 없이 실패한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-threads-error-"));
+  const missing = join(dir, "PRIVATE_MISSING.jsonl");
+  const fixture = resolve("tests/fixtures/demo.jsonl");
+  try {
+    for (const testCase of [
+      { args: ["--threads", fixture], status: 2 },
+      { args: ["--threads", fixture, "PRIVATE/ALIAS"], status: 1 },
+      { args: ["--threads", missing, "sample"], status: 1 },
+    ]) {
+      const result = run(testCase.args);
+      assert.equal(result.error, undefined);
+      assert.equal(result.status, testCase.status);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes("PRIVATE"));
+      assert.ok(!result.stderr.includes(missing));
+    }
+  } finally {
+    await rmdir(dir);
+  }
+});
+
 test("입력 요약은 중복을 포함한 정규화 결과와 진단·미지원을 집계한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-summary-"));
   const path = join(dir, "input.jsonl");
