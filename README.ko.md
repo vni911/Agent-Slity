@@ -55,7 +55,7 @@ npm ci
 npm run check
 ```
 
-`npm run check`는 타입 검사, 린트, 테스트와 빌드를 순서대로 실행합니다. Windows PowerShell에서는 `npm.cmd`를 사용할 수 있습니다. [기여 절차](CONTRIBUTING.md)와 [에이전트 작업 지침](AGENTS.md)도 확인하세요.
+`npm run check`는 타입 검사, 린트, 단위 테스트, 빌드와 CLI 프로세스 통합 테스트를 순서대로 실행합니다. 통합 테스트만 실행하려면 먼저 `npm run build`를 실행한 뒤 `npm run test:integration`을 사용하세요. Windows PowerShell에서는 `npm.cmd`를 사용할 수 있습니다. [기여 절차](CONTRIBUTING.md)와 [에이전트 작업 지침](AGENTS.md)도 확인하세요.
 
 합성 예제의 정규화 결과를 모델 호출 없이 확인하려면 다음을 실행하세요.
 
