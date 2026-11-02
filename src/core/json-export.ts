@@ -58,10 +58,13 @@ function serialize(results: readonly NormalizationResult[]): string {
     if (e.run_id !== null || e.task_id !== null || e.parent_thread_id !== null || e.agent_id !== null ||
         e.event_id !== null || e.timestamp !== null || e.verification_status !== "unverified" ||
         !["thread.started", "turn.started", "turn.completed", "turn.failed", "item.started", "item.completed", "error"].includes(e.event_type)) invalid();
+    const itemType = e.payload.item_type ?? null;
+    if (itemType !== null && (itemType !== "command_execution" && itemType !== "agent_message" ||
+        e.event_type !== "item.started" && e.event_type !== "item.completed")) invalid();
     return { kind: "event", event: {
       run_id: null, task_id: null, thread_id: nullableString(e.thread_id), parent_thread_id: null,
       agent_id: null, event_id: null, event_type: e.event_type, timestamp: null,
-      source: sourceOf(e.source), verification_status: "unverified", payload: { usage: usageOf(e.payload.usage) },
+      source: sourceOf(e.source), verification_status: "unverified", payload: { item_type: itemType, usage: usageOf(e.payload.usage) },
     } };
   });
   return JSON.stringify({ format: "agent-slity.normalization-results", version: 1, results: entries });

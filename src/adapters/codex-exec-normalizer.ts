@@ -66,6 +66,8 @@ export function normalizeCodexExecLine(input: JsonlReadResult, sourceId?: string
   const threadId = typeof rawThreadId === "string" && rawThreadId.trim().length > 0
     ? rawThreadId
     : null;
+  const item = type === "item.started" || type === "item.completed" ? own(input.value, "item") : undefined;
+  const itemType = isObject(item) ? own(item, "type") : undefined;
 
   return {
     kind: "event",
@@ -81,7 +83,10 @@ export function normalizeCodexExecLine(input: JsonlReadResult, sourceId?: string
       source,
       verification_status: "unverified",
       // 공식 예시의 turn.completed 사용량만 보존한다. 집계하지 않는다.
-      payload: { usage: usageOf(type === "turn.completed" ? own(input.value, "usage") : undefined) },
+      payload: {
+        item_type: itemType === "command_execution" || itemType === "agent_message" ? itemType : null,
+        usage: usageOf(type === "turn.completed" ? own(input.value, "usage") : undefined),
+      },
     },
   };
 }

@@ -36,6 +36,21 @@ describe("정규화 결과 JSON 내보내기", () => {
     expect(exportNormalizationJson([result])).not.toContain("PRIVATE_");
   });
 
+  it("항목 유형을 보존하고 이전 결과의 누락 필드는 null로 내보낸다", () => {
+    const result = normalizeCodexExecLine({
+      kind: "record", line: 1, value: { type: "item.started", item: { type: "command_execution" } },
+    });
+    if (result.kind !== "event") throw new Error("이벤트가 아닙니다.");
+    const parsed = JSON.parse(exportNormalizationJson([result])) as { results: NormalizationResult[] };
+    const first = parsed.results[0];
+    expect(first?.kind === "event" && first.event.payload.item_type).toBe("command_execution");
+    delete result.event.payload.item_type;
+    const old = JSON.parse(exportNormalizationJson([result])) as { results: NormalizationResult[] };
+    expect(old.results[0]?.kind === "event" && old.results[0].event.payload.item_type).toBeNull();
+    Object.assign(result.event.payload, { item_type: "PRIVATE_TYPE" });
+    expect(() => exportNormalizationJson([result])).toThrow(TypeError);
+  });
+
   it("잘못된 값과 배열 구멍을 원문 없는 오류로 거부한다", () => {
     const invalid = normalizeCodexExecLine({ kind: "record", line: 1, value: { type: "thread.started" } });
     if (invalid.kind !== "event") throw new Error("이벤트가 아닙니다.");
