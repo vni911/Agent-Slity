@@ -38,16 +38,29 @@ describe("정규화 결과 JSON 내보내기", () => {
 
   it("항목 유형을 보존하고 이전 결과의 누락 필드는 null로 내보낸다", () => {
     const result = normalizeCodexExecLine({
-      kind: "record", line: 1, value: { type: "item.started", item: { type: "command_execution" } },
+      kind: "record", line: 1, value: { type: "item.started", item: { id: "synthetic-item", type: "command_execution" } },
     });
     if (result.kind !== "event") throw new Error("이벤트가 아닙니다.");
     const parsed = JSON.parse(exportNormalizationJson([result])) as { results: NormalizationResult[] };
     const first = parsed.results[0];
     expect(first?.kind === "event" && first.event.payload.item_type).toBe("command_execution");
+    expect(first?.kind === "event" && first.event.payload.item_id).toBe("synthetic-item");
     delete result.event.payload.item_type;
+    delete result.event.payload.item_id;
     const old = JSON.parse(exportNormalizationJson([result])) as { results: NormalizationResult[] };
     expect(old.results[0]?.kind === "event" && old.results[0].event.payload.item_type).toBeNull();
+    expect(old.results[0]?.kind === "event" && old.results[0].event.payload.item_id).toBeNull();
     Object.assign(result.event.payload, { item_type: "PRIVATE_TYPE" });
+    expect(() => exportNormalizationJson([result])).toThrow(TypeError);
+  });
+
+  it("항목 이벤트가 아닌 결과의 ID와 잘못된 ID는 거부한다", () => {
+    const result = normalizeCodexExecLine({ kind: "record", line: 1, value: { type: "turn.started" } });
+    if (result.kind !== "event") throw new Error("이벤트가 아닙니다.");
+    result.event.payload.item_id = "fake-id";
+    expect(() => exportNormalizationJson([result])).toThrow(TypeError);
+    result.event.event_type = "item.started";
+    result.event.payload.item_id = " ";
     expect(() => exportNormalizationJson([result])).toThrow(TypeError);
   });
 

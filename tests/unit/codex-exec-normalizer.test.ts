@@ -50,7 +50,7 @@ describe("Codex exec JSONL 이벤트 정규화", () => {
         timestamp: null,
         source: { format: "codex_exec_jsonl", line: 3, source_id: null, format_version: null, collected_at: null },
         verification_status: "unverified",
-        payload: { item_type: null, usage: { input_tokens: null, cached_input_tokens: null, output_tokens: null, reasoning_output_tokens: null } },
+        payload: { item_type: null, item_id: null, usage: { input_tokens: null, cached_input_tokens: null, output_tokens: null, reasoning_output_tokens: null } },
       },
     });
   });
@@ -114,17 +114,18 @@ describe("Codex exec JSONL 이벤트 정규화", () => {
     expect(serialized).not.toContain("PRIVATE_SYNTHETIC_MESSAGE");
     expect(serialized).not.toContain("PRIVATE_SYNTHETIC_COMMAND");
     expect(serialized).not.toContain("PRIVATE_SYNTHETIC_EXTRA");
-    expect(serialized).not.toContain("item-1");
+    expect(result.kind === "event" && result.event.payload.item_id).toBe("item-1");
   });
 
-  it("공식 예시의 항목 유형만 보존하고 원문과 항목 ID는 제외한다", () => {
+  it("공식 예시의 항목 유형과 ID를 보존하고 원문은 제외한다", () => {
     for (const [eventType, itemType] of [["item.started", "command_execution"], ["item.completed", "agent_message"]]) {
       const result = normalizeCodexExecLine(record({
-        type: eventType, item: { type: itemType, id: "PRIVATE_ID", command: "PRIVATE_COMMAND", text: "PRIVATE_MESSAGE" },
+        type: eventType, item: { type: itemType, id: "synthetic-item", command: "PRIVATE_COMMAND", text: "PRIVATE_MESSAGE" },
       }));
       expect(result.kind).toBe("event");
       if (result.kind !== "event") throw new Error("이벤트가 아닙니다.");
       expect(result.event.payload.item_type).toBe(itemType);
+      expect(result.event.payload.item_id).toBe("synthetic-item");
       expect(result.event.verification_status).toBe("unverified");
       expect(JSON.stringify(result)).not.toContain("PRIVATE_");
     }
@@ -136,6 +137,28 @@ describe("Codex exec JSONL 이벤트 정규화", () => {
       const result = normalizeCodexExecLine(record(value));
       expect(result.kind === "event" && result.event.payload.item_type).toBeNull();
     }
+  });
+
+  it("항목 ID는 직접 제공된 문자열만 보존하며 다른 식별자로 추정하지 않는다", () => {
+    const value = normalizeCodexExecLine(record({ type: "item.started", item: { id: "opaque-id", type: "future_type" } }));
+    if (value.kind !== "event") throw new Error("이벤트가 아닙니다.");
+    expect(value.event.payload.item_id).toBe("opaque-id");
+    expect(value.event.payload.item_type).toBeNull();
+    expect(value.event.event_id).toBeNull();
+    expect(value.event.thread_id).toBeNull();
+    expect(value.event.agent_id).toBeNull();
+    for (const input of [
+      { type: "item.completed", item: { id: " " } },
+      { type: "item.started", item: { id: 42 } },
+      { type: "turn.started", item: { id: "not-an-item-event" } },
+    ]) {
+      const result = normalizeCodexExecLine(record(input));
+      expect(result.kind === "event" && result.event.payload.item_id).toBeNull();
+    }
+    const item = {};
+    Object.defineProperty(item, "id", { get() { throw new Error("PRIVATE_GETTER"); } });
+    const getter = normalizeCodexExecLine(record({ type: "item.started", item }));
+    expect(getter.kind === "event" && getter.event.payload.item_id).toBeNull();
   });
 
   it("객체가 아닌 값과 알 수 없는 이벤트를 줄 번호가 있는 미지원 결과로 남긴다", () => {
