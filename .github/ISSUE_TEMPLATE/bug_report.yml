@@ -1,0 +1,23 @@
+name: 오류 보고
+description: 재현 가능한 오류를 보고합니다.
+title: "fix: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제와 재현 방법
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과와 실제 결과
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경과 검증 근거
+      description: 운영체제와 버전을 적고, 인증 정보·개인 대화·원본 로그는 제외하세요.
+    validations:
+      required: true

@@ -2,7 +2,24 @@
 
 ## 현재 포함된 자료
 
-현재 문서 단계에는 제3자 구현 코드, 실행 의존성, 과거 Agent Desk 코드, 테스트 자료로 사용하는 모델 출력, 벤치마크 데이터셋을 포함하지 않는다. 자체 작성 자료에 적용하는 [Apache License, Version 2.0](LICENSE) 원문은 [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt)에서 가져왔으며 영문 원문을 보존한다.
+현재 저장소에는 제3자 구현 코드, 실행 의존성, 과거 Agent Desk 코드, 테스트 자료로 사용하는 모델 출력, 벤치마크 데이터셋을 복사해 포함하지 않는다. 개발·CI 도구는 아래와 같이 의존성으로 사용한다. 자체 작성 자료에 적용하는 [Apache License, Version 2.0](LICENSE) 원문은 [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt)에서 가져왔으며 영문 원문을 보존한다.
+
+## 개발 도구와 CI
+
+2026-11-02 기준 `package-lock.json`의 직접 개발 의존성과 라이선스 메타데이터는 다음과 같다. 각 도구의 저작권·라이선스 원문은 링크한 원본과 설치된 패키지에서 확인한다.
+
+| 도구 | 잠금 버전 | 라이선스 | 출처 |
+| --- | --- | --- | --- |
+| TypeScript | 6.0.3 | Apache-2.0 | [원본](https://github.com/microsoft/TypeScript) |
+| ESLint | 10.14.0 | MIT | [원본](https://github.com/eslint/eslint) |
+| typescript-eslint | 8.72.1 | MIT | [원본](https://github.com/typescript-eslint/typescript-eslint) |
+| Vitest | 5.0.5 | MIT | [원본](https://github.com/vitest-dev/vitest) |
+| Vite | 8.3.5 | MIT | [원본](https://github.com/vitejs/vite) |
+| @types/node | 24.19.2 | MIT | [원본](https://github.com/DefinitelyTyped/DefinitelyTyped) |
+| actions/checkout | 7.0.1 | MIT | [라이선스](https://github.com/actions/checkout/blob/v7.0.1/LICENSE) |
+| actions/setup-node | 7.1.0 | MIT | [라이선스](https://github.com/actions/setup-node/blob/v7.1.0/LICENSE) |
+
+간접 의존성의 정확한 버전과 메타데이터는 `package-lock.json`을 참고한다. 향후 배포물에 의존성을 포함할 경우 각 구성요소의 라이선스와 고지 의무를 별도로 검토한다.
 
 ## 향후 연동 대상
 
