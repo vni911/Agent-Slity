@@ -26,6 +26,8 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 For item start and completion events, `payload.item_type` preserves only `command_execution` and `agent_message`, as shown in the official examples. Other or missing types become `null`; the type does not establish execution success or message delivery. This field is additive in version 1 JSON, and older results without it export as `null`.
 
+An item event's explicit `item.id` is preserved as `payload.item_id`. It is distinct from event, thread, and agent IDs and does not prove a shared run or parent relationship. Item IDs may contain sensitive information; review them before sharing. Older results without this field export as `null`. Compatibility with existing consumers that reject additional version 1 JSON fields is unverified.
+
 Pass an optional source alias, for example `normalizeCodexExecLine(line, "source_1")`, to preserve it on events, diagnostics, and unsupported results. Aliases use 1–64 ASCII letters, digits, underscores, or hyphens; omission yields `null`. Callers must manage distinct aliases per file and must not include paths or sensitive information.
 
 File contents and aliases are not authenticated, so `verification_status` is `unverified`. Format version and collection timestamp remain unknown. Thread linking, usage aggregation, and deduplication are not performed. Identifiers may also contain sensitive data; do not publish results automatically.
