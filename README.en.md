@@ -8,7 +8,7 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**The stage 1 collection foundation is in progress.** The library reads a user-selected JSONL file and normalizes a limited set of Codex execution events. It does not modify the source or call a model. There is no installable application, CLI, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
+**The stage 1 collection foundation is in progress.** The library and development CLI read a user-selected JSONL file and normalize a limited set of Codex execution events. They do not modify the source or call a model. There is no installable application, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
 
 The intended first environment is Windows 11 with WSL2 Ubuntu and Codex CLI. Support has not been validated. Windows without WSL, Linux, and macOS are future targets.
 
@@ -44,18 +44,26 @@ These are planned capabilities, not implemented features or demonstrated improve
 
 The first collector is planned to import existing local Codex execution records without calling a model. Evidence sources and uncertainty will be preserved; missing usage will remain `unknown`, not zero. Analysis will distinguish confirmed observations from suspected inefficiency and insufficient evidence.
 
-No logs are collected at this stage. Future public examples will use synthetic records. Do not attach authentication files, credentials, private conversations, or raw execution logs to issues or PRs. See [Security](SECURITY.md).
+Logs are not collected automatically. Public examples use synthetic records. Do not attach authentication files, credentials, private conversations, or raw execution logs to issues or PRs. See [Security](SECURITY.md).
 
 ## Getting started
 
-There is currently no product to install or run. To use the development tools, install Node.js 24 and Git, then run from the repository root:
+To use the development CLI, install Node.js 24 and Git, then run from the repository root:
 
 ```sh
 npm ci
 npm run check
 ```
 
-`npm run check` runs type checking, linting, tests, and build in sequence. On Windows PowerShell, use `npm.cmd` if needed. See the [contribution workflow](CONTRIBUTING.md) and [agent guidelines](AGENTS.md). A model-free demo command and screenshots will be added when the relevant functionality exists.
+`npm run check` runs type checking, linting, tests, and build in sequence. On Windows PowerShell, use `npm.cmd` if needed. See the [contribution workflow](CONTRIBUTING.md) and [agent guidelines](AGENTS.md).
+
+Run the synthetic example without a model call:
+
+```sh
+node dist/cli/main.js tests/fixtures/demo.jsonl demo
+```
+
+Replace the path with a JSONL file you choose. The second argument is an optional source alias. Results are written only to standard output and held entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
 ## Roadmap
 

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"synthetic-thread-1"}
+{"type":"turn.started"}
+{"type":"turn.completed","usage":{"input_tokens":120,"cached_input_tokens":0,"output_tokens":20}}
+{"type":"future.synthetic.event"}
