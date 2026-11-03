@@ -232,6 +232,8 @@ test("부모 후보 CLI는 역순·중복과 진단의 입력 위치를 보존�
     ]);
     assert.deepEqual(json.records.map(({ input_index, line }) => [input_index, line]), [[0, 1], [2, 4], [3, 5], [4, 6], [5, 7]]);
     assert.deepEqual(json.diagnostics, [{ input_index: 1, line: 2, code: "invalid_json" }]);
+    assert.equal(json.records[0].result.parent_thread_id_status, "present");
+    assert.equal(json.records[1].result.parent_thread_id_status, "explicit_null");
     assert.deepEqual(json.unassociated, [{ index: 1, reason: "missing_parent" }, { index: 2, reason: "missing_parent" }]);
     assert.deepEqual(json.unsupported_indices, [4]);
     assert.ok(!result.stdout.includes("PRIVATE_PATH"));
