@@ -22,7 +22,13 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ### 현재 이벤트 정규화 범위
 
-`normalizeCodexThreadReadV0166`은 JSON-RPC 응답 전체가 아닌 `thread/read`의 `result` 객체를 받아 명시적 스레드·부모·세션·분기 출처 ID를 각각 보존합니다. 스레드 ID가 없으면 미지원 결과이며, 그 밖의 누락된 ID는 스키마의 필수 여부와 관계없이 `null`로 둡니다. 기준인 `0.166.0`은 호출자가 선택한 스키마 참조이며 입력의 전체 스키마·실제 버전·진위를 검증하지 않습니다. 결과는 `unverified`이고 ID에는 민감정보가 있을 수 있습니다. 서버 실행·기록 수집·CLI 연결은 하지 않습니다. [스키마 조사](docs/research/codex-app-server-schema.md)를 참고하세요.
+`normalizeCodexThreadReadV0166`은 JSON-RPC 응답 전체가 아닌 `thread/read`의 `result` 객체를 받아 명시적 스레드·부모·세션·분기 출처 ID를 각각 보존합니다. 스레드 ID가 없으면 미지원 결과이며, 그 밖의 누락된 ID는 스키마의 필수 여부와 관계없이 `null`로 둡니다. 기준인 `0.166.0`은 호출자가 선택한 스키마 참조이며 입력의 전체 스키마·실제 버전·진위를 검증하지 않습니다. 결과는 `unverified`이고 ID에는 민감정보가 있을 수 있습니다. 서버나 Codex CLI 실행, 기록 수집은 하지 않습니다. [스키마 조사](docs/research/codex-app-server-schema.md)를 참고하세요.
+
+개발용 CLI는 한 줄에 `result` 객체 하나가 담긴 JSONL을 읽습니다. 다음 합성 예제는 순서·줄 번호·중복과 손상 진단을 보존해 표준 출력으로 표시합니다. 전체 결과가 메모리에 저장되며 식별자에 민감정보가 있을 수 있습니다. 서버 실행이나 세션 자동 탐색은 하지 않습니다.
+
+```sh
+node dist/cli/main.js --thread-read-jsonl tests/fixtures/thread-read-demo.jsonl sample
+```
 
 `normalizeCodexExecLine`은 리더의 한 줄을 받아 공식 `codex exec --json` 문서에 예시된 제한된 이벤트 유형만 변환합니다. 명시된 스레드 ID, 지원되는 항목 유형과 완료 이벤트의 사용량을 보존하며, 확인되지 않은 값은 `null`로 남기고 실제 0은 보존합니다. 메시지·명령 원문은 결과에 포함하지 않습니다. 미지원 입력과 손상 진단은 줄 번호와 함께 별도로 반환합니다.
 

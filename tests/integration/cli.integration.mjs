@@ -212,6 +212,43 @@ test("항목 후보 조회의 인수·파일 오류는 원문과 부분 JSON 없
   }
 });
 
+test("스레드 조회 결과 JSONL의 순서·중복·진단을 보존하고 원문은 제외한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-thread-read-"));
+  const path = join(dir, "input.jsonl");
+  const item = '{"thread":{"id":"child","parentThreadId":"parent","sessionId":"session","forkedFromId":"fork","cwd":"PRIVATE_PATH"}}';
+  const input = [item, item, '{"thread":{"id":"child","parentThreadId":"parent"}}', '{"thread":{}}', '{', ''].join("\n");
+  await writeFile(path, input);
+  try {
+    const result = run(["--thread-read-jsonl", path, "sample"]);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    const json = JSON.parse(result.stdout);
+    assert.equal(json.format, "agent-slity.thread-read-results");
+    assert.equal(json.source_id, "sample");
+    assert.deepEqual(json.results.map((entry) => [entry.line, entry.kind]), [[1, "thread"], [2, "thread"], [3, "thread"], [4, "unsupported"], [5, "diagnostic"]]);
+    assert.equal(json.results[0].parent_thread_id, "parent");
+    assert.equal(json.results[0].forked_from_id, "fork");
+    assert.equal(json.results[0].verification_status, "unverified");
+    assert.deepEqual({ ...json.results[1], line: 1 }, json.results[0]);
+    assert.equal(json.results[2].session_id, null);
+    assert.equal(json.results[3].reason, "invalid_thread");
+    assert.equal(json.results[4].code, "invalid_json");
+    assert.ok(!result.stdout.includes("PRIVATE_PATH"));
+    assert.ok(!result.stdout.includes(path));
+    assert.equal(await readFile(path, "utf8"), input);
+    for (const args of [["--thread-read-jsonl", path, "PRIVATE/ALIAS"], ["--thread-read-jsonl", join(dir, "PRIVATE_MISSING"), "sample"]]) {
+      const failure = run(args);
+      assert.equal(failure.status, 1);
+      assert.equal(failure.stdout, "");
+      assert.ok(!failure.stderr.includes("PRIVATE"));
+    }
+    assert.equal(run(["--thread-read-jsonl", path]).status, 2);
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
+
 test("스레드 후보 조회는 명시적 ID·누락·역순·중복과 진단을 보존한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-threads-"));
   const path = join(dir, "input.jsonl");
