@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { readJsonlFile } from "../adapters/jsonl-reader.js";
 import { normalizeCodexExecLine } from "../adapters/codex-exec-normalizer.js";
+import { normalizeCodexThreadReadV0166 } from "../adapters/codex-app-server-thread-read.js";
 import { exportNormalizationJson } from "../core/json-export.js";
 import { findSourceOverlaps } from "../core/source-overlap.js";
 import { groupItemObservations } from "../core/item-observations.js";
@@ -35,6 +36,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "입력 요약: node dist/cli/main.js --summary <JSONL 파일>",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
+        "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
         "중복 후보: node dist/cli/main.js --overlaps <출처_별칭> <JSONL 파일> <JSONL 파일> [...]",
         "도움말: node dist/cli/main.js --help 또는 -h",
         "출처 별칭: 일반 입력은 선택, 중복·항목·스레드 후보 조회는 필수. 영문자·숫자·밑줄·하이픈 1~64자.",
@@ -49,6 +51,24 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       ].join("\n"),
       stderr: "",
     };
+  }
+  if (args[0] === "--thread-read-jsonl") {
+    if (args.length !== 3 || !args[1] || args[1].startsWith("-") || !args[2] ||
+        args.includes("--help") || args.includes("-h")) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --thread-read-jsonl <JSONL 파일> <출처_별칭>\n" };
+    }
+    try {
+      const sourceId = args[2];
+      normalizeCodexThreadReadV0166(null, sourceId);
+      const results = [];
+      for await (const entry of readJsonlFile(args[1])) {
+        if (entry.kind === "diagnostic") results.push({ line: entry.line, kind: "diagnostic", code: entry.code });
+        else results.push({ line: entry.line, ...normalizeCodexThreadReadV0166(entry.value, sourceId) });
+      }
+      return { exitCode: 0, stdout: `${JSON.stringify({ format: "agent-slity.thread-read-results", version: 1, source_id: sourceId, results })}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "입력을 처리할 수 없습니다. 파일과 출처 별칭을 확인하세요.\n" };
+    }
   }
   if (args[0] === "--threads") {
     if (args.length !== 3 || !args[1] || args[1].startsWith("-") || !args[2] ||

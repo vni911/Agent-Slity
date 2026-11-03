@@ -22,7 +22,13 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 ### Current event normalization scope
 
-`normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, collect records, or connect to the CLI. See the [schema research](docs/research/codex-app-server-schema.md).
+`normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, run the Codex CLI, or collect records. See the [schema research](docs/research/codex-app-server-schema.md).
+
+The development CLI reads JSONL with one `result` object per line. This synthetic example preserves order, line numbers, duplicates, and malformed-line diagnostics on standard output. All results are held in memory and identifiers may be sensitive. No server is started and sessions are not discovered automatically.
+
+```sh
+node dist/cli/main.js --thread-read-jsonl tests/fixtures/thread-read-demo.jsonl sample
+```
 
 `normalizeCodexExecLine` accepts one reader result and maps only a limited set of event types shown in the official `codex exec --json` documentation. It preserves explicit thread IDs, supported item types, and completed-turn usage, keeps unknown fields as `null`, and preserves an actual zero. Raw messages and commands are excluded. Unsupported inputs and damaged-line diagnostics are returned separately with line numbers.
 
