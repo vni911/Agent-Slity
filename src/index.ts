@@ -5,6 +5,8 @@ export { normalizeCodexThreadReadV0166 } from "./adapters/codex-app-server-threa
 export type { ThreadReadResult, ThreadReadSource } from "./adapters/codex-app-server-thread-read.js";
 export { normalizeCodexItemsPageV0166 } from "./adapters/codex-app-server-items.js";
 export type { CollabItemObservation, ItemsPageResult } from "./adapters/codex-app-server-items.js";
+export { findParentThreadCandidates } from "./core/parent-thread-candidates.js";
+export type { ParentThreadCandidateGroup, ParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { findSourceOverlaps } from "./core/source-overlap.js";
