@@ -6,7 +6,8 @@ export interface ThreadReadSource {
 
 export type ThreadReadResult =
   | { kind: "thread"; source: ThreadReadSource; verification_status: "unverified"; thread_id: string;
-      parent_thread_id: string | null; session_id: string | null; forked_from_id: string | null }
+      parent_thread_id: string | null; parent_thread_id_status?: "present" | "explicit_null" | "unknown";
+      session_id: string | null; forked_from_id: string | null }
   | { kind: "unsupported"; source: ThreadReadSource; reason: "invalid_thread" };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -34,9 +35,12 @@ export function normalizeCodexThreadReadV0166(input: unknown, sourceId?: string)
   const thread = isObject(input) ? own(input, "thread") : undefined;
   const threadId = isObject(thread) ? id(own(thread, "id")) : null;
   if (!isObject(thread) || threadId === null) return { kind: "unsupported", source, reason: "invalid_thread" };
+  const rawParent = own(thread, "parentThreadId");
+  const parentId = id(rawParent);
   return {
     kind: "thread", source, verification_status: "unverified", thread_id: threadId,
-    parent_thread_id: id(own(thread, "parentThreadId")), session_id: id(own(thread, "sessionId")),
+    parent_thread_id: parentId, parent_thread_id_status: parentId !== null ? "present" : rawParent === null ? "explicit_null" : "unknown",
+    session_id: id(own(thread, "sessionId")),
     forked_from_id: id(own(thread, "forkedFromId")),
   };
 }

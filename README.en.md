@@ -22,6 +22,8 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 ### Current event normalization scope
 
+In normalized `thread/read` results, `parent_thread_id_status` distinguishes a valid ID (`present`), explicit `null` (`explicit_null`), and missing, invalid, or inaccessible values (`unknown`). Explicit `null` does not prove an actual root thread. Older results may lack this field and should be treated as unknown. Parent candidate `missing_parent` does not distinguish the two states; inspect the corresponding `records` entry. This field is additive; compatibility with consumers that reject additional fields is unverified.
+
 `findParentThreadCandidates(results)` groups input indices where explicit parent and thread IDs match within the same source alias in normalized `thread/read` results. It preserves order, duplicates, conflicting observations, missing source or parent IDs, and absent candidates. A matching self-ID is included; session and fork IDs do not imply a relationship. Matching IDs do not prove a parent relationship or execution, and results are `unverified`. IDs may be sensitive, and all results are held in memory.
 
 The development CLI finds parent candidates in JSONL containing one `thread/read` `result` object per line. This synthetic example uses candidate indices into the output `records` array; each record's `line` and `input_index` identify its source position. `input_index` is zero-based, includes diagnostics, and excludes blank lines. All results are held in memory and IDs may be sensitive.
