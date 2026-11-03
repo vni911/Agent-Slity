@@ -1,0 +1,3 @@
+{"data":[{"turnId":"synthetic-turn","item":{"type":"collabAgentToolCall","id":"synthetic-item","senderThreadId":"synthetic-parent","receiverThreadIds":["synthetic-child"],"tool":"spawnAgent","status":"completed"}}],"nextCursor":null}
+{"data":[{"turnId":"synthetic-turn","item":{"type":"collabAgentToolCall","id":"synthetic-item","senderThreadId":"synthetic-parent","receiverThreadIds":["synthetic-child"],"tool":"spawnAgent","status":"completed"}}],"nextCursor":null}
+{
