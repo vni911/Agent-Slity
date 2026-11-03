@@ -22,6 +22,8 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 ### Current event normalization scope
 
+`normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, collect records, or connect to the CLI. See the [schema research](docs/research/codex-app-server-schema.md).
+
 `normalizeCodexExecLine` accepts one reader result and maps only a limited set of event types shown in the official `codex exec --json` documentation. It preserves explicit thread IDs, supported item types, and completed-turn usage, keeps unknown fields as `null`, and preserves an actual zero. Raw messages and commands are excluded. Unsupported inputs and damaged-line diagnostics are returned separately with line numbers.
 
 For item start and completion events, `payload.item_type` preserves only `command_execution` and `agent_message`, as shown in the official examples. Other or missing types become `null`; the type does not establish execution success or message delivery. This field is additive in version 1 JSON, and older results without it export as `null`.
