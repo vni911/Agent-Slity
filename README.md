@@ -24,6 +24,12 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 `findParentThreadCandidates(results)`는 정규화된 `thread/read` 결과에서 같은 출처 별칭의 명시적 부모 ID와 스레드 ID가 일치하는 입력 인덱스를 검토 후보로 묶습니다. 순서·중복·상충 기록과 출처 또는 부모 ID 누락, 후보 부재를 보존합니다. 자기 자신의 ID도 일치하면 후보에 포함하며 세션·포크 ID로 관계를 추정하지 않습니다. ID 일치는 실제 부모 관계나 실행을 증명하지 않으며 결과는 `unverified`입니다. ID는 민감할 수 있고 전체 결과를 메모리에 보관합니다.
 
+개발용 CLI에서 한 줄에 `thread/read`의 `result` 객체 하나가 담긴 JSONL의 부모 후보를 확인할 수 있습니다. 다음은 합성 예제입니다. 후보 인덱스는 출력의 `records` 배열 기준이며, 각 레코드의 `line`과 `input_index`로 원래 위치를 확인합니다. `input_index`는 빈 줄을 제외하고 손상 진단을 포함한 0 기반 순서입니다. 결과 전체를 메모리에 보관하며 ID에 민감정보가 있을 수 있습니다.
+
+```sh
+node dist/cli/main.js --parents-jsonl tests/fixtures/parent-candidates-demo.jsonl sample
+```
+
 `normalizeCodexItemsPageV0166`은 `thread/items/list`의 `result` 객체 한 페이지에서 0.166.0 스키마의 `collabAgentToolCall` 항목에 명시된 turn·항목·송신·수신 ID와 도구·상태를 추출합니다. 중복과 순서, 미지원 항목을 보존하고 빠진 값은 `null`로 둡니다. `next_page`는 커서의 유무만 표시하며 페이지 전체 또는 실행 기록의 완전성을 증명하지 않습니다. 커서·프롬프트·메시지 원문은 출력하지 않지만 ID는 민감할 수 있습니다. 한 페이지 항목과 전체 수신 ID는 각각 최대 10,000개입니다. 초과 항목 페이지는 미지원이며, 전체 수신 ID 제한을 초과하는 항목의 수신 ID는 `null`입니다. 수신 ID의 누락과 제한 초과는 구분하지 않습니다. 스키마 전체와 진위는 검증하지 않고 결과는 `unverified`입니다. 서버 조회와 모델 호출은 하지 않습니다.
 
 개발용 CLI에서 한 줄에 페이지 `result` 객체 하나가 담긴 JSONL을 처리할 수 있습니다. 다음 합성 예제는 중복 페이지와 손상 진단을 보여 줍니다. 줄당 기본 크기 제한은 8 MiB이며, 결과 전체를 메모리에 보관하므로 큰 입력에 주의하세요. ID에는 민감정보가 있을 수 있어 공유 전에 확인해야 합니다.
