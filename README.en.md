@@ -24,6 +24,12 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 `normalizeCodexItemsPageV0166` extracts explicit turn, item, sender, receiver, tool, and status fields from `collabAgentToolCall` entries in one `thread/items/list` result object using the 0.166.0 schema. It preserves order, duplicates, and unsupported entries, leaving missing values `null`. `next_page` indicates cursor presence only; it does not establish page or run completeness. Cursor, prompt, and message contents are excluded, but IDs may be sensitive. A page and its total receiver IDs are each limited to 10,000 entries. An oversized page is unsupported; an item that exceeds the remaining receiver limit has `null` receiver IDs. Missing and limit-exceeded receiver IDs are not distinguished. The whole schema and authenticity are not validated; results are `unverified`. No server or model is called.
 
+The development CLI processes JSONL containing one page `result` object per line. This synthetic example shows duplicate pages and a malformed-line diagnostic. The default line limit is 8 MiB, and all results are held in memory. IDs may be sensitive and should be reviewed before sharing.
+
+```sh
+node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sample
+```
+
 `normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, run the Codex CLI, or collect records. See the [schema research](docs/research/codex-app-server-schema.md).
 
 The development CLI reads JSONL with one `result` object per line. This synthetic example preserves order, line numbers, duplicates, and malformed-line diagnostics on standard output. All results are held in memory and identifiers may be sensitive. No server is started and sessions are not discovered automatically.
