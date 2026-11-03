@@ -2,11 +2,13 @@ import { writeFile } from "node:fs/promises";
 import { readJsonlFile } from "../adapters/jsonl-reader.js";
 import { normalizeCodexExecLine } from "../adapters/codex-exec-normalizer.js";
 import { normalizeCodexThreadReadV0166 } from "../adapters/codex-app-server-thread-read.js";
+import type { ThreadReadResult } from "../adapters/codex-app-server-thread-read.js";
 import { normalizeCodexItemsPageV0166 } from "../adapters/codex-app-server-items.js";
 import { exportNormalizationJson } from "../core/json-export.js";
 import { findSourceOverlaps } from "../core/source-overlap.js";
 import { groupItemObservations } from "../core/item-observations.js";
 import { groupThreadObservations } from "../core/thread-observations.js";
+import { findParentThreadCandidates } from "../core/parent-thread-candidates.js";
 import type { NormalizationResult } from "../core/events.js";
 
 export interface CliResult {
@@ -38,6 +40,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
+        "부모 스레드 후보: node dist/cli/main.js --parents-jsonl <JSONL 파일> <출처_별칭>",
         "저장 항목 페이지: node dist/cli/main.js --items-page-jsonl <JSONL 파일> <출처_별칭>",
         "중복 후보: node dist/cli/main.js --overlaps <출처_별칭> <JSONL 파일> <JSONL 파일> [...]",
         "도움말: node dist/cli/main.js --help 또는 -h",
@@ -53,6 +56,33 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       ].join("\n"),
       stderr: "",
     };
+  }
+  if (args[0] === "--parents-jsonl") {
+    if (args.length !== 3 || !args[1] || args[1].startsWith("-") || !args[2] ||
+        args.includes("--help") || args.includes("-h")) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --parents-jsonl <JSONL 파일> <출처_별칭>\n" };
+    }
+    try {
+      const sourceId = args[2];
+      normalizeCodexThreadReadV0166(null, sourceId);
+      const values: ThreadReadResult[] = [];
+      const records: { input_index: number; line: number; result: ThreadReadResult }[] = [];
+      const diagnostics: { input_index: number; line: number; code: string }[] = [];
+      let inputIndex = 0;
+      for await (const entry of readJsonlFile(args[1])) {
+        if (entry.kind === "diagnostic") diagnostics.push({ input_index: inputIndex, line: entry.line, code: entry.code });
+        else {
+          const result = normalizeCodexThreadReadV0166(entry.value, sourceId);
+          values.push(result);
+          records.push({ input_index: inputIndex, line: entry.line, result });
+        }
+        inputIndex++;
+      }
+      return { exitCode: 0, stdout: `${JSON.stringify({ format: "agent-slity.parent-thread-candidates", version: 1,
+        records, diagnostics, ...findParentThreadCandidates(values) })}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "입력을 처리할 수 없습니다. 파일과 출처 별칭을 확인하세요.\n" };
+    }
   }
   if (args[0] === "--items-page-jsonl") {
     if (args.length !== 3 || !args[1] || args[1].startsWith("-") || !args[2] ||

@@ -212,6 +212,44 @@ test("항목 후보 조회의 인수·파일 오류는 원문과 부분 JSON 없
   }
 });
 
+test("부모 후보 CLI는 역순·중복과 진단의 입력 위치를 보존한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-parents-"));
+  const path = join(dir, "input.jsonl");
+  const parent = '{"thread":{"id":"parent","parentThreadId":null,"cwd":"PRIVATE_PATH"}}';
+  const input = ['{"thread":{"id":"child","parentThreadId":"parent"}}', '{', '', parent, parent,
+    '{"thread":{"id":"orphan","parentThreadId":"missing"}}', '{}', ''].join("\n");
+  await writeFile(path, input);
+  try {
+    const result = run(["--parents-jsonl", path, "sample"]);
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, "");
+    const json = JSON.parse(result.stdout);
+    assert.equal(json.format, "agent-slity.parent-thread-candidates");
+    assert.equal(json.verification_status, "unverified");
+    assert.deepEqual(json.groups, [
+      { source_id: "sample", parent_thread_id: "parent", child_indices: [0], parent_candidate_indices: [1, 2] },
+      { source_id: "sample", parent_thread_id: "missing", child_indices: [3], parent_candidate_indices: [] },
+    ]);
+    assert.deepEqual(json.records.map(({ input_index, line }) => [input_index, line]), [[0, 1], [2, 4], [3, 5], [4, 6], [5, 7]]);
+    assert.deepEqual(json.diagnostics, [{ input_index: 1, line: 2, code: "invalid_json" }]);
+    assert.deepEqual(json.unassociated, [{ index: 1, reason: "missing_parent" }, { index: 2, reason: "missing_parent" }]);
+    assert.deepEqual(json.unsupported_indices, [4]);
+    assert.ok(!result.stdout.includes("PRIVATE_PATH"));
+    assert.ok(!result.stdout.includes(path));
+    assert.equal(await readFile(path, "utf8"), input);
+    for (const args of [["--parents-jsonl", path, "PRIVATE/ALIAS"], ["--parents-jsonl", join(dir, "PRIVATE_MISSING"), "sample"]]) {
+      const failure = run(args);
+      assert.equal(failure.status, 1);
+      assert.equal(failure.stdout, "");
+      assert.ok(!failure.stderr.includes("PRIVATE"));
+    }
+    assert.equal(run(["--parents-jsonl", path]).status, 2);
+  } finally {
+    await unlink(path);
+    await rmdir(dir);
+  }
+});
+
 test("저장 항목 페이지 JSONL의 순서·중복·진단과 미확인을 보존한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-items-page-"));
   const path = join(dir, "input.jsonl");

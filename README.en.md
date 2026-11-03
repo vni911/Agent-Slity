@@ -24,6 +24,12 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 `findParentThreadCandidates(results)` groups input indices where explicit parent and thread IDs match within the same source alias in normalized `thread/read` results. It preserves order, duplicates, conflicting observations, missing source or parent IDs, and absent candidates. A matching self-ID is included; session and fork IDs do not imply a relationship. Matching IDs do not prove a parent relationship or execution, and results are `unverified`. IDs may be sensitive, and all results are held in memory.
 
+The development CLI finds parent candidates in JSONL containing one `thread/read` `result` object per line. This synthetic example uses candidate indices into the output `records` array; each record's `line` and `input_index` identify its source position. `input_index` is zero-based, includes diagnostics, and excludes blank lines. All results are held in memory and IDs may be sensitive.
+
+```sh
+node dist/cli/main.js --parents-jsonl tests/fixtures/parent-candidates-demo.jsonl sample
+```
+
 `normalizeCodexItemsPageV0166` extracts explicit turn, item, sender, receiver, tool, and status fields from `collabAgentToolCall` entries in one `thread/items/list` result object using the 0.166.0 schema. It preserves order, duplicates, and unsupported entries, leaving missing values `null`. `next_page` indicates cursor presence only; it does not establish page or run completeness. Cursor, prompt, and message contents are excluded, but IDs may be sensitive. A page and its total receiver IDs are each limited to 10,000 entries. An oversized page is unsupported; an item that exceeds the remaining receiver limit has `null` receiver IDs. Missing and limit-exceeded receiver IDs are not distinguished. The whole schema and authenticity are not validated; results are `unverified`. No server or model is called.
 
 The development CLI processes JSONL containing one page `result` object per line. This synthetic example shows duplicate pages and a malformed-line diagnostic. The default line limit is 8 MiB, and all results are held in memory. IDs may be sensitive and should be reviewed before sharing.
