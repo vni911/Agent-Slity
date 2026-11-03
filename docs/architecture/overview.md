@@ -50,6 +50,8 @@ App Server는 공식적으로 수명주기와 이벤트를 다룰 수 있지만,
 
 공식 문서는 CLI로 해당 버전에 맞는 TypeScript/JSON 스키마를 생성할 수 있다고 설명한다. 구현 시 설치된 Codex 버전과 스키마를 확인하고, 페이지 조회·하위 스레드 연결·사용량·이벤트 복원 지원을 합성 데이터와 실환경에서 각각 검증한다. 실험적 필드는 명시적 opt-in이 필요할 수 있으며 기본 안정 API로 가정하지 않는다. [공식 문서](https://learn.chatgpt.com/docs/app-server), [Codex 플랫폼 설명](https://developers.openai.com/blog/codex-as-a-platform).
 
+설치된 CLI 0.166.0의 생성 스키마와 현재 문서의 차이, 저장 기록 조회의 한계는 [별도 조사](../research/codex-app-server-schema.md)를 참고한다. 이는 서버 동작이나 실환경 지원을 검증한 결과가 아니다.
+
 ## 이벤트와 증거 모델
 
 공통 이벤트는 최소한 `run_id`, `task_id`, `thread_id`, `parent_thread_id`, `agent_id`, `event_id`, `event_type`, `timestamp`, `source`, `verification_status`, `payload`를 고려한다. 식별자·시각이 출처에서 제공되지 않으면 null 또는 명시적인 `unknown` 상태로 둔다. 사람이 보기 좋도록 만든 내부 ID는 출처가 제공한 실제 ID와 구별한다.
