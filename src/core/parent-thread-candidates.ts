@@ -9,7 +9,8 @@ export interface ParentThreadCandidateGroup {
 export interface ParentThreadCandidates {
   verification_status: "unverified";
   groups: ParentThreadCandidateGroup[];
-  unassociated: { index: number; reason: "missing_source" | "missing_parent" | "missing_both" }[];
+  unassociated: { index: number; reason: "missing_source" | "missing_parent" | "missing_both";
+    parent_thread_id_status?: "present" | "explicit_null" | "unknown" }[];
   unsupported_indices: number[];
 }
 
@@ -31,7 +32,10 @@ export function findParentThreadCandidates(results: readonly ThreadReadResult[])
     const parent = result.parent_thread_id;
     if (source === null || parent === null) {
       const reason = source === null && parent === null ? "missing_both" : source === null ? "missing_source" : "missing_parent";
-      unassociated.push({ index, reason });
+      const status = result.parent_thread_id_status;
+      const observed = status === "explicit_null" && parent === null ? "explicit_null" :
+        status === "present" && typeof parent === "string" && parent.trim().length > 0 ? "present" : "unknown";
+      unassociated.push({ index, reason, parent_thread_id_status: observed });
       continue;
     }
     const key = JSON.stringify([source, parent]);

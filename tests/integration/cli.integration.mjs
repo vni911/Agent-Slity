@@ -217,7 +217,7 @@ test("부모 후보 CLI는 역순·중복과 진단의 입력 위치를 보존�
   const path = join(dir, "input.jsonl");
   const parent = '{"thread":{"id":"parent","parentThreadId":null,"cwd":"PRIVATE_PATH"}}';
   const input = ['{"thread":{"id":"child","parentThreadId":"parent"}}', '{', '', parent, parent,
-    '{"thread":{"id":"orphan","parentThreadId":"missing"}}', '{}', ''].join("\n");
+    '{"thread":{"id":"orphan","parentThreadId":"missing"}}', '{"thread":{"id":"unknown"}}', '{}', ''].join("\n");
   await writeFile(path, input);
   try {
     const result = run(["--parents-jsonl", path, "sample"]);
@@ -230,12 +230,14 @@ test("부모 후보 CLI는 역순·중복과 진단의 입력 위치를 보존�
       { source_id: "sample", parent_thread_id: "parent", child_indices: [0], parent_candidate_indices: [1, 2] },
       { source_id: "sample", parent_thread_id: "missing", child_indices: [3], parent_candidate_indices: [] },
     ]);
-    assert.deepEqual(json.records.map(({ input_index, line }) => [input_index, line]), [[0, 1], [2, 4], [3, 5], [4, 6], [5, 7]]);
+    assert.deepEqual(json.records.map(({ input_index, line }) => [input_index, line]), [[0, 1], [2, 4], [3, 5], [4, 6], [5, 7], [6, 8]]);
     assert.deepEqual(json.diagnostics, [{ input_index: 1, line: 2, code: "invalid_json" }]);
     assert.equal(json.records[0].result.parent_thread_id_status, "present");
     assert.equal(json.records[1].result.parent_thread_id_status, "explicit_null");
-    assert.deepEqual(json.unassociated, [{ index: 1, reason: "missing_parent" }, { index: 2, reason: "missing_parent" }]);
-    assert.deepEqual(json.unsupported_indices, [4]);
+    assert.deepEqual(json.unassociated, [{ index: 1, reason: "missing_parent", parent_thread_id_status: "explicit_null" },
+      { index: 2, reason: "missing_parent", parent_thread_id_status: "explicit_null" },
+      { index: 4, reason: "missing_parent", parent_thread_id_status: "unknown" }]);
+    assert.deepEqual(json.unsupported_indices, [5]);
     assert.ok(!result.stdout.includes("PRIVATE_PATH"));
     assert.ok(!result.stdout.includes(path));
     assert.equal(await readFile(path, "utf8"), input);
