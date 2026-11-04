@@ -4,7 +4,7 @@ export { normalizeCodexExecLine } from "./adapters/codex-exec-normalizer.js";
 export { normalizeCodexThreadReadV0166 } from "./adapters/codex-app-server-thread-read.js";
 export type { ThreadReadResult, ThreadReadSource } from "./adapters/codex-app-server-thread-read.js";
 export { normalizeCodexItemsPageV0166 } from "./adapters/codex-app-server-items.js";
-export type { CollabItemObservation, ItemsPageResult } from "./adapters/codex-app-server-items.js";
+export type { CollabItemObservation, SubagentActivityObservation, ItemsPageResult } from "./adapters/codex-app-server-items.js";
 export { findParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export type { ParentThreadCandidateGroup, ParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export { CodexReadTransport, ReadTransportError } from "./adapters/codex-read-transport.js";

@@ -1,5 +1,6 @@
 const TOOLS = new Set(["spawnAgent", "sendInput", "resumeAgent", "wait", "closeAgent", "sendMessage", "followupTask", "interruptAgent", "listAgents"]);
 const STATUSES = new Set(["inProgress", "completed", "failed", "interrupted"]);
+const ACTIVITIES = new Set(["started", "interacted", "interrupted", "completed"]);
 const LIMIT = 10000;
 
 export interface CollabItemObservation {
@@ -12,9 +13,19 @@ export interface CollabItemObservation {
   tool: string | null;
   status: string | null;
 }
+export interface SubagentActivityObservation {
+  index: number;
+  kind: "subagent_activity";
+  turn_id: string | null;
+  item_id: string | null;
+  agent_thread_id: string | null;
+  activity: string | null;
+  reported_model: string | null;
+  reported_reasoning_effort: string | null;
+}
 export type ItemsPageResult =
   | { kind: "page"; source_id: string | null; schema_reference: "0.166.0"; verification_status: "unverified";
-      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | { index: number; kind: "unsupported" })[] }
+      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | SubagentActivityObservation | { index: number; kind: "unsupported" })[] }
   | { kind: "unsupported"; source_id: string | null; schema_reference: "0.166.0"; reason: "invalid_page" };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -27,6 +38,9 @@ function own(value: object, key: string): unknown {
 }
 function id(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+function activityValue(value: unknown): string | null {
+  return typeof value === "string" && value.length <= 256 && value.trim().length > 0 ? value : null;
 }
 function arrayLength(value: unknown): number | null {
   try {
@@ -57,12 +71,23 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
   }
   const cursor = own(input, "nextCursor");
   const next_page = cursor === null ? "none" : typeof cursor === "string" && cursor.length > 0 ? "available" : "unknown";
-  const items: (CollabItemObservation | { index: number; kind: "unsupported" })[] = [];
+  const items: (CollabItemObservation | SubagentActivityObservation | { index: number; kind: "unsupported" })[] = [];
   let remainingReceivers = LIMIT;
   for (let index = 0; index < length; index++) {
     const entry = own(data, String(index));
     const item = isObject(entry) ? own(entry, "item") : undefined;
-    if (!isObject(entry) || !isObject(item) || own(item, "type") !== "collabAgentToolCall") {
+    if (!isObject(entry) || !isObject(item)) {
+      items.push({ index, kind: "unsupported" });
+      continue;
+    }
+    const type = own(item, "type");
+    if (type === "subAgentActivity") {
+      items.push({ index, kind: "subagent_activity", turn_id: activityValue(own(entry, "turnId")), item_id: activityValue(own(item, "id")),
+        agent_thread_id: activityValue(own(item, "agentThreadId")), activity: allowed(own(item, "kind"), ACTIVITIES),
+        reported_model: activityValue(own(item, "model")), reported_reasoning_effort: activityValue(own(item, "reasoningEffort")) });
+      continue;
+    }
+    if (type !== "collabAgentToolCall") {
       items.push({ index, kind: "unsupported" });
       continue;
     }
