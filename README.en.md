@@ -52,6 +52,8 @@ node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sa
 
 Collaboration calls and subagent activities preserve explicit Unix milliseconds as safe integers in `started_at_ms` and `completed_at_ms`. Validation uses parsed JavaScript values and cannot guarantee the original JSON number's precision. Missing, null, invalid, and unsafe integer values become `null`; time ordering and execution are not verified. Compatibility with existing consumers that reject additional fields is unverified.
 
+`commandExecution` entries retain only IDs, explicit timestamps, status, an int32 exit code, and a nonnegative safe-integer duration. Missing or invalid values are `null`; command text, paths, and output are excluded. These observations do not prove execution or test success. These entries previously appeared as unsupported, so consumer compatibility with the new output kind is unverified.
+
 The CLI can connect thread and item observations from two synthetic JSONL files as explicit ID-match candidates:
 
 ```sh

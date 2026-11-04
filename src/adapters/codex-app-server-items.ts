@@ -1,6 +1,7 @@
 const TOOLS = new Set(["spawnAgent", "sendInput", "resumeAgent", "wait", "closeAgent", "sendMessage", "followupTask", "interruptAgent", "listAgents"]);
 const STATUSES = new Set(["inProgress", "completed", "failed", "interrupted"]);
 const ACTIVITIES = new Set(["started", "interacted", "interrupted", "completed"]);
+const COMMAND_STATUSES = new Set(["inProgress", "completed", "failed", "declined"]);
 const LIMIT = 10000;
 
 export interface CollabItemObservation {
@@ -27,9 +28,20 @@ export interface SubagentActivityObservation {
   reported_model: string | null;
   reported_reasoning_effort: string | null;
 }
+export interface CommandExecutionObservation {
+  index: number;
+  kind: "command_execution";
+  turn_id: string | null;
+  item_id: string | null;
+  started_at_ms: number | null;
+  completed_at_ms: number | null;
+  status: string | null;
+  exit_code: number | null;
+  duration_ms: number | null;
+}
 export type ItemsPageResult =
   | { kind: "page"; source_id: string | null; schema_reference: "0.166.0"; verification_status: "unverified";
-      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | SubagentActivityObservation | { index: number; kind: "unsupported" })[] }
+      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | { index: number; kind: "unsupported" })[] }
   | { kind: "unsupported"; source_id: string | null; schema_reference: "0.166.0"; reason: "invalid_page" };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -61,6 +73,12 @@ function allowed(value: unknown, values: Set<string>): string | null {
 function timestamp(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
 }
+function exitCode(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647 ? value : null;
+}
+function duration(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
 
 /** 전체 스키마·출처·실행의 진위는 확인하지 않는다. 입력은 JSON-RPC의 result 객체다. */
 export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string): ItemsPageResult {
@@ -75,7 +93,7 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
   }
   const cursor = own(input, "nextCursor");
   const next_page = cursor === null ? "none" : typeof cursor === "string" && cursor.length > 0 ? "available" : "unknown";
-  const items: (CollabItemObservation | SubagentActivityObservation | { index: number; kind: "unsupported" })[] = [];
+  const items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | { index: number; kind: "unsupported" })[] = [];
   let remainingReceivers = LIMIT;
   for (let index = 0; index < length; index++) {
     const entry = own(data, String(index));
@@ -85,6 +103,12 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
       continue;
     }
     const type = own(item, "type");
+    if (type === "commandExecution") {
+      items.push({ index, kind: "command_execution", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+        started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),
+        status: allowed(own(item, "status"), COMMAND_STATUSES), exit_code: exitCode(own(item, "exitCode")), duration_ms: duration(own(item, "durationMs")) });
+      continue;
+    }
     if (type === "subAgentActivity") {
       items.push({ index, kind: "subagent_activity", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
         started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),

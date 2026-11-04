@@ -13,7 +13,7 @@ test("두 합성 JSONL의 위치·진단·중복 후보를 읽기 전용으로 �
   const threads = join(dir, "threads.jsonl");
   const pages = join(dir, "pages.jsonl");
   const threadInput = '{"thread":{"id":"child","secret":"PRIVATE_THREAD"}}\n{\n{"thread":{"id":"child"}}\n';
-  const pageInput = '{\n{"data":[{"startedAtMs":100,"completedAtMs":120,"item":{"type":"collabAgentToolCall","senderThreadId":"parent","receiverThreadIds":["child","child"],"prompt":"PRIVATE_PROMPT"}}],"nextCursor":null}\n';
+  const pageInput = '{\n{"data":[{"startedAtMs":100,"completedAtMs":120,"item":{"type":"collabAgentToolCall","senderThreadId":"parent","receiverThreadIds":["child","child"],"prompt":"PRIVATE_PROMPT"}},{"item":{"type":"commandExecution","status":"completed","exitCode":0,"durationMs":25,"command":"PRIVATE_COMMAND"}}],"nextCursor":null}\n';
   await writeFile(threads, threadInput);
   await writeFile(pages, pageInput);
   try {
@@ -28,6 +28,8 @@ test("두 합성 JSONL의 위치·진단·중복 후보를 읽기 전용으로 �
     assert.deepEqual(output.page_records.map((record) => record.line), [2]);
     assert.equal(output.page_records[0].result.items[0].started_at_ms, 100);
     assert.equal(output.page_records[0].result.items[0].completed_at_ms, 120);
+    assert.equal(output.page_records[0].result.items[1].kind, "command_execution");
+    assert.equal(output.page_records[0].result.items[1].exit_code, 0);
     assert.deepEqual(output.diagnostics, [{ input: "threads", line: 2, code: "invalid_json" }, { input: "pages", line: 1, code: "invalid_json" }]);
     assert.deepEqual(output.groups[0].thread_indices, [0, 1]);
     assert.deepEqual(output.groups[0].item_references.map((ref) => ref.receiver_index), [0, 1]);
