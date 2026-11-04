@@ -50,6 +50,8 @@ The development CLI processes JSONL containing one page `result` object per line
 node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sample
 ```
 
+Collaboration calls and subagent activities preserve explicit Unix milliseconds as safe integers in `started_at_ms` and `completed_at_ms`. Validation uses parsed JavaScript values and cannot guarantee the original JSON number's precision. Missing, null, invalid, and unsafe integer values become `null`; time ordering and execution are not verified. Compatibility with existing consumers that reject additional fields is unverified.
+
 The CLI can connect thread and item observations from two synthetic JSONL files as explicit ID-match candidates:
 
 ```sh

@@ -274,6 +274,7 @@ test("저장 항목 페이지 JSONL의 순서·중복·진단과 미확인을 �
     assert.deepEqual(json.results[0].items[0].receiver_thread_ids, ["child"]);
     assert.equal(json.results[0].items[1].kind, "unsupported");
     assert.deepEqual(json.results[0].items[2], { index: 2, kind: "subagent_activity", turn_id: "turn", item_id: "activity",
+      started_at_ms: null, completed_at_ms: null,
       agent_thread_id: "child", activity: "started", reported_model: "synthetic-model", reported_reasoning_effort: null });
     assert.equal(json.results[2].next_page, "unknown");
     assert.equal(json.results[3].reason, "invalid_page");

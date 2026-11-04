@@ -2,6 +2,23 @@ import { describe, expect, it } from "vitest";
 import { normalizeCodexItemsPageV0166 } from "../../src/index.js";
 
 describe("저장 항목 페이지 정규화", () => {
+  it("명시된 시작·종료 밀리초만 보존하며 시간 순서를 추론하지 않는다", () => {
+    const item = { type: "collabAgentToolCall" };
+    let called = false;
+    const getter = { item };
+    Object.defineProperty(getter, "startedAtMs", { get() { called = true; throw new Error("PRIVATE"); } });
+    const result = normalizeCodexItemsPageV0166({ data: [
+      { item, startedAtMs: 100, completedAtMs: 0 },
+      { item: { type: "subAgentActivity" }, startedAtMs: -1, completedAtMs: Number.MAX_SAFE_INTEGER },
+      { item, startedAtMs: 1.5, completedAtMs: Number.MAX_SAFE_INTEGER + 1 },
+      { item, startedAtMs: "12", completedAtMs: null }, getter,
+    ] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items.map((entry) => entry.kind === "unsupported" ? null : [entry.started_at_ms, entry.completed_at_ms])).toEqual([
+      [100, 0], [-1, Number.MAX_SAFE_INTEGER], [null, null], [null, null], [null, null],
+    ]);
+    expect(called).toBe(false);
+  });
   it("협업 호출의 명시적 필드와 중복을 보존하고 원문·커서는 제외한다", () => {
     const entry = { turnId: "turn", item: { type: "collabAgentToolCall", id: "item", senderThreadId: "sender",
       receiverThreadIds: ["receiver", "receiver"], tool: "spawnAgent", status: "completed", prompt: "PRIVATE_PROMPT" } };
@@ -9,8 +26,8 @@ describe("저장 항목 페이지 정규화", () => {
     expect(result.kind).toBe("page");
     if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
     expect(result).toEqual({ kind: "page", source_id: "sample", schema_reference: "0.166.0", verification_status: "unverified", next_page: "available", items: [
-      { index: 0, kind: "collab", turn_id: "turn", item_id: "item", sender_thread_id: "sender", receiver_thread_ids: ["receiver", "receiver"], tool: "spawnAgent", status: "completed" },
-      { index: 1, kind: "collab", turn_id: "turn", item_id: "item", sender_thread_id: "sender", receiver_thread_ids: ["receiver", "receiver"], tool: "spawnAgent", status: "completed" },
+      { index: 0, kind: "collab", turn_id: "turn", item_id: "item", started_at_ms: null, completed_at_ms: null, sender_thread_id: "sender", receiver_thread_ids: ["receiver", "receiver"], tool: "spawnAgent", status: "completed" },
+      { index: 1, kind: "collab", turn_id: "turn", item_id: "item", started_at_ms: null, completed_at_ms: null, sender_thread_id: "sender", receiver_thread_ids: ["receiver", "receiver"], tool: "spawnAgent", status: "completed" },
       { index: 2, kind: "unsupported" },
     ] });
     expect(JSON.stringify(result)).not.toContain("PRIVATE_");
@@ -21,7 +38,7 @@ describe("저장 항목 페이지 정규화", () => {
       { item: { type: "collabToolCall" } }, null] });
     if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
     expect(result.next_page).toBe("unknown");
-    expect(result.items).toEqual([{ index: 0, kind: "collab", turn_id: null, item_id: null, sender_thread_id: null,
+    expect(result.items).toEqual([{ index: 0, kind: "collab", turn_id: null, item_id: null, started_at_ms: null, completed_at_ms: null, sender_thread_id: null,
       receiver_thread_ids: [null, null], tool: null, status: null }, { index: 1, kind: "unsupported" }, { index: 2, kind: "unsupported" }]);
     expect(normalizeCodexItemsPageV0166({ data: [], nextCursor: null })).toMatchObject({ kind: "page", next_page: "none" });
     expect(normalizeCodexItemsPageV0166({ data: [], nextCursor: "" })).toMatchObject({ kind: "page", next_page: "unknown" });
@@ -61,7 +78,7 @@ describe("저장 항목 페이지 정규화", () => {
       receiverThreadIds: [tooLong, maximum, tooLong] } };
     const result = normalizeCodexItemsPageV0166({ data: [entry, entry] });
     if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
-    expect(result.items).toEqual([0, 1].map((index) => ({ index, kind: "collab", turn_id: maximum, item_id: null,
+    expect(result.items).toEqual([0, 1].map((index) => ({ index, kind: "collab", turn_id: maximum, item_id: null, started_at_ms: null, completed_at_ms: null,
       sender_thread_id: maximum, receiver_thread_ids: [null, maximum, null], tool: null, status: null })));
   });
 
@@ -91,8 +108,8 @@ describe("저장 항목 페이지 정규화", () => {
     const result = normalizeCodexItemsPageV0166({ data: [entry, entry, { item: { type: "other" } }], nextCursor: null }, "sample");
     if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
     expect(result.items).toEqual([
-      { index: 0, kind: "subagent_activity", turn_id: "turn", item_id: "item", agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
-      { index: 1, kind: "subagent_activity", turn_id: "turn", item_id: "item", agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
+      { index: 0, kind: "subagent_activity", turn_id: "turn", item_id: "item", started_at_ms: null, completed_at_ms: null, agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
+      { index: 1, kind: "subagent_activity", turn_id: "turn", item_id: "item", started_at_ms: null, completed_at_ms: null, agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
       { index: 2, kind: "unsupported" },
     ]);
     expect(result.verification_status).toBe("unverified");
@@ -105,7 +122,7 @@ describe("저장 항목 페이지 정규화", () => {
     Object.defineProperty(item, "reasoningEffort", { get() { called = true; throw new Error("PRIVATE_GETTER"); } });
     const result = normalizeCodexItemsPageV0166({ data: [{ item }] });
     if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
-    expect(result.items).toEqual([{ index: 0, kind: "subagent_activity", turn_id: null, item_id: null,
+    expect(result.items).toEqual([{ index: 0, kind: "subagent_activity", turn_id: null, item_id: null, started_at_ms: null, completed_at_ms: null,
       agent_thread_id: null, activity: null, reported_model: null, reported_reasoning_effort: null }]);
     expect(called).toBe(false);
     for (const activity of ["started", "interacted", "interrupted", "completed"]) {

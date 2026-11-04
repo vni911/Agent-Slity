@@ -50,6 +50,8 @@ node dist/cli/main.js --parents-jsonl tests/fixtures/parent-candidates-demo.json
 node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sample
 ```
 
+협업 호출과 하위 에이전트 활동은 항목에 명시된 안전한 정수 Unix 밀리초를 `started_at_ms`와 `completed_at_ms`로 보존합니다. 검사는 파싱된 JavaScript 값 기준이며 JSON 숫자의 원본 정밀성은 보장하지 않습니다. 누락·null·잘못된 값·안전한 정수 범위 밖의 값은 `null`이며 시간 순서나 실행을 검증하지 않습니다. 추가 필드를 거부하는 기존 소비자와의 호환성은 확인 필요입니다.
+
 두 합성 JSONL의 스레드와 항목을 명시적 ID 일치 후보로 연결할 수 있습니다.
 
 ```sh
