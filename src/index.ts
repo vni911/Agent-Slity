@@ -7,6 +7,8 @@ export { normalizeCodexItemsPageV0166 } from "./adapters/codex-app-server-items.
 export type { CollabItemObservation, ItemsPageResult } from "./adapters/codex-app-server-items.js";
 export { findParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export type { ParentThreadCandidateGroup, ParentThreadCandidates } from "./core/parent-thread-candidates.js";
+export { CodexReadTransport, ReadTransportError } from "./adapters/codex-read-transport.js";
+export type { ReadTransportErrorCode } from "./adapters/codex-read-transport.js";
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { findSourceOverlaps } from "./core/source-overlap.js";
