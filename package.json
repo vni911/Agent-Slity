@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
-    "test:integration": "node --test tests/integration/cli.integration.mjs",
+    "test:integration": "node --test tests/integration/*.integration.mjs",
     "build": "tsc -p tsconfig.build.json",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:integration"
   },
