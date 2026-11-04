@@ -8,6 +8,8 @@ export interface CollabItemObservation {
   kind: "collab";
   turn_id: string | null;
   item_id: string | null;
+  started_at_ms: number | null;
+  completed_at_ms: number | null;
   sender_thread_id: string | null;
   receiver_thread_ids: (string | null)[] | null;
   tool: string | null;
@@ -18,6 +20,8 @@ export interface SubagentActivityObservation {
   kind: "subagent_activity";
   turn_id: string | null;
   item_id: string | null;
+  started_at_ms: number | null;
+  completed_at_ms: number | null;
   agent_thread_id: string | null;
   activity: string | null;
   reported_model: string | null;
@@ -54,6 +58,9 @@ function receivers(value: unknown, remaining: number): (string | null)[] | null 
 function allowed(value: unknown, values: Set<string>): string | null {
   return typeof value === "string" && values.has(value) ? value : null;
 }
+function timestamp(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
+}
 
 /** 전체 스키마·출처·실행의 진위는 확인하지 않는다. 입력은 JSON-RPC의 result 객체다. */
 export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string): ItemsPageResult {
@@ -80,6 +87,7 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
     const type = own(item, "type");
     if (type === "subAgentActivity") {
       items.push({ index, kind: "subagent_activity", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+        started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),
         agent_thread_id: boundedValue(own(item, "agentThreadId")), activity: allowed(own(item, "kind"), ACTIVITIES),
         reported_model: boundedValue(own(item, "model")), reported_reasoning_effort: boundedValue(own(item, "reasoningEffort")) });
       continue;
@@ -91,6 +99,7 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
     const receiverIds = receivers(own(item, "receiverThreadIds"), remainingReceivers);
     if (receiverIds) remainingReceivers -= receiverIds.length;
     items.push({ index, kind: "collab", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+      started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),
       sender_thread_id: boundedValue(own(item, "senderThreadId")), receiver_thread_ids: receiverIds,
       tool: allowed(own(item, "tool"), TOOLS), status: allowed(own(item, "status"), STATUSES) });
   }

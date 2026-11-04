@@ -25,6 +25,7 @@ async function collect(scenario) {
     assert.equal(result.pages[0].items[0].item_id, "item");
     assert.equal(result.pages[0].items[1].kind, "unsupported");
     assert.deepEqual(result.pages[0].items[2], { index: 2, kind: "subagent_activity", turn_id: "turn", item_id: "activity",
+      started_at_ms: null, completed_at_ms: null,
       agent_thread_id: "child", activity: "started", reported_model: "synthetic-model", reported_reasoning_effort: "high" });
     assert.ok(!JSON.stringify(result).includes("PRIVATE_"));
     return result;
