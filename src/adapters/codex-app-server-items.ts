@@ -36,10 +36,7 @@ function own(value: object, key: string): unknown {
   try { const d = Object.getOwnPropertyDescriptor(value, key); return d && "value" in d ? d.value : undefined; }
   catch { return undefined; }
 }
-function id(value: unknown): string | null {
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-}
-function activityValue(value: unknown): string | null {
+function boundedValue(value: unknown): string | null {
   return typeof value === "string" && value.length <= 256 && value.trim().length > 0 ? value : null;
 }
 function arrayLength(value: unknown): number | null {
@@ -52,7 +49,7 @@ function arrayLength(value: unknown): number | null {
 function receivers(value: unknown, remaining: number): (string | null)[] | null {
   const length = arrayLength(value);
   if (length === null || length > remaining || !value || typeof value !== "object") return null;
-  return Array.from({ length }, (_, i) => id(own(value, String(i))));
+  return Array.from({ length }, (_, i) => boundedValue(own(value, String(i))));
 }
 function allowed(value: unknown, values: Set<string>): string | null {
   return typeof value === "string" && values.has(value) ? value : null;
@@ -82,9 +79,9 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
     }
     const type = own(item, "type");
     if (type === "subAgentActivity") {
-      items.push({ index, kind: "subagent_activity", turn_id: activityValue(own(entry, "turnId")), item_id: activityValue(own(item, "id")),
-        agent_thread_id: activityValue(own(item, "agentThreadId")), activity: allowed(own(item, "kind"), ACTIVITIES),
-        reported_model: activityValue(own(item, "model")), reported_reasoning_effort: activityValue(own(item, "reasoningEffort")) });
+      items.push({ index, kind: "subagent_activity", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+        agent_thread_id: boundedValue(own(item, "agentThreadId")), activity: allowed(own(item, "kind"), ACTIVITIES),
+        reported_model: boundedValue(own(item, "model")), reported_reasoning_effort: boundedValue(own(item, "reasoningEffort")) });
       continue;
     }
     if (type !== "collabAgentToolCall") {
@@ -93,8 +90,8 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
     }
     const receiverIds = receivers(own(item, "receiverThreadIds"), remainingReceivers);
     if (receiverIds) remainingReceivers -= receiverIds.length;
-    items.push({ index, kind: "collab", turn_id: id(own(entry, "turnId")), item_id: id(own(item, "id")),
-      sender_thread_id: id(own(item, "senderThreadId")), receiver_thread_ids: receiverIds,
+    items.push({ index, kind: "collab", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+      sender_thread_id: boundedValue(own(item, "senderThreadId")), receiver_thread_ids: receiverIds,
       tool: allowed(own(item, "tool"), TOOLS), status: allowed(own(item, "status"), STATUSES) });
   }
   return { kind: "page", source_id, schema_reference: "0.166.0", verification_status: "unverified", next_page, items };

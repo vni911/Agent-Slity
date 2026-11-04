@@ -22,6 +22,8 @@ Reader values are raw JSON of type `unknown` and may contain sensitive content. 
 
 ### Current event normalization scope
 
+Stored collaboration item turn, item, sender, and receiver IDs are each limited to 256 UTF-16 code units. Oversized values become `null` without truncation; receiver positions and duplicates are preserved. Output does not distinguish oversized from missing values. Long IDs previously emitted now become `null`, so compatibility with existing consumers is unverified.
+
 The 0.166.0 `subAgentActivity` item is normalized as `subagent_activity`, preserving explicit thread, item, and turn IDs, activity kind, and reported model and reasoning settings. Each string is limited to 256 UTF-16 code units; missing, invalid, or oversized values become `null`. Agent paths and message contents are excluded, but IDs and settings may be sensitive. Inputs are `unverified`, and reported settings do not prove actual usage or performance. A previously unsupported item now has a new variant; compatibility with strict consumers is unverified.
 
 `collectFromChildV0166` takes ownership of an already started child and its pipes, initializes and collects one thread, closes streams, and attempts to terminate the child. `cleanup_status: exit_observed` means the direct child’s exit was observed; it does not imply a successful exit, complete pipe cleanup, or that all descendants were terminated. If exit is not observed within the limit, the status is `unknown`. Raw stderr is discarded; callers choose the executable and verify its version. Only a synthetic server has been tested; actual Codex execution, isolation, file and network side effects, and user record integration are unverified.

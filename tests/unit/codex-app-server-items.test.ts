@@ -54,6 +54,37 @@ describe("저장 항목 페이지 정규화", () => {
     expect(result.items[2]).toMatchObject({ receiver_thread_ids: [] });
   });
 
+  it("협업 ID의 길이 경계와 반복된 초과 수신 ID를 자르지 않고 보존한다", () => {
+    const maximum = "x".repeat(256);
+    const tooLong = "x".repeat(257);
+    const entry = { turnId: maximum, item: { type: "collabAgentToolCall", id: tooLong, senderThreadId: maximum,
+      receiverThreadIds: [tooLong, maximum, tooLong] } };
+    const result = normalizeCodexItemsPageV0166({ data: [entry, entry] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items).toEqual([0, 1].map((index) => ({ index, kind: "collab", turn_id: maximum, item_id: null,
+      sender_thread_id: maximum, receiver_thread_ids: [null, maximum, null], tool: null, status: null })));
+  });
+
+  it("긴 ID가 만 개 반복되어도 초과 ID를 결과에 복사하지 않는다", () => {
+    const tooLong = "x".repeat(100000);
+    const entry = { turnId: tooLong, item: { type: "collabAgentToolCall", id: tooLong, senderThreadId: tooLong,
+      receiverThreadIds: Array(10000).fill(tooLong) } };
+    const result = normalizeCodexItemsPageV0166({ data: [entry] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items[0]).toMatchObject({ turn_id: null, item_id: null, sender_thread_id: null });
+    expect(result.items[0].kind === "collab" && result.items[0].receiver_thread_ids?.every((value) => value === null)).toBe(true);
+    expect(JSON.stringify(result).length).toBeLessThan(60000);
+  });
+
+  it("보충 평면 문자는 UTF-16 코드 단위로 계산한다", () => {
+    const supplementary = String.fromCodePoint(0x1f600);
+    const result = normalizeCodexItemsPageV0166({ data: [{ item: { type: "collabAgentToolCall",
+      id: supplementary.repeat(128), receiverThreadIds: [supplementary.repeat(129)] } }] });
+    if (result.kind !== "page" || result.items[0].kind !== "collab") throw new Error("협업 항목이 아닙니다.");
+    expect(result.items[0].item_id).toBe(supplementary.repeat(128));
+    expect(result.items[0].receiver_thread_ids).toEqual([null]);
+  });
+
   it("하위 에이전트 활동과 명시된 설정만 순서·중복을 보존해 출력한다", () => {
     const entry = { turnId: "turn", item: { type: "subAgentActivity", id: "item", agentThreadId: "child",
       kind: "started", model: "model-x", reasoningEffort: "high", agentPath: "PRIVATE_PATH", text: "PRIVATE_TEXT" } };
