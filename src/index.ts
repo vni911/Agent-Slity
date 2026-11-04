@@ -11,6 +11,8 @@ export { CodexReadTransport, ReadTransportError } from "./adapters/codex-read-tr
 export type { ReadTransportErrorCode } from "./adapters/codex-read-transport.js";
 export { collectCodexThreadPagesV0166 } from "./core/thread-page-collector.js";
 export type { CollectionStop, ThreadPageCollection, ThreadReadClient } from "./core/thread-page-collector.js";
+export { collectFromChildV0166 } from "./core/child-thread-collection.js";
+export type { ChildThreadCollectionResult } from "./core/child-thread-collection.js";
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { findSourceOverlaps } from "./core/source-overlap.js";

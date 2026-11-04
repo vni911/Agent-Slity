@@ -17,12 +17,15 @@ lines.on("line", (line) => {
   const request = JSON.parse(line);
   if (phase === "initialize" && request.method === "initialize" && request.id === 1) {
     phase = "initialized";
-    send({ id: request.id, result: {} });
+    if (scenario === "init_error") send({ id: request.id, error: { message: "PRIVATE_INIT_ERROR" } });
+    else send({ id: request.id, result: {} });
   } else if (phase === "initialized" && request.method === "initialized" && request.id === undefined) {
     phase = "thread";
   } else if (phase === "thread" && request.method === "thread/read" && request.params?.threadId === "child" && request.params?.includeTurns === false) {
     phase = "items";
-    send({ id: request.id, result: { thread: { id: "child", parentThreadId: "parent", cwd: "PRIVATE_PATH" } } });
+    if (scenario === "exit") process.exit(3);
+    else if (scenario === "hang") process.stderr.write("SYNTHETIC_READ_STARTED\n");
+    else send({ id: request.id, result: { thread: { id: "child", parentThreadId: "parent", cwd: "PRIVATE_PATH" } } });
   } else if (phase === "items" && request.method === "thread/items/list" && request.params?.threadId === "child" &&
     request.params?.limit === 100 && (page === 0 ? request.params?.cursor === undefined : request.params?.cursor === "PRIVATE_CURSOR")) {
     page++;
