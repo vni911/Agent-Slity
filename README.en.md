@@ -50,6 +50,14 @@ The development CLI processes JSONL containing one page `result` object per line
 node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sample
 ```
 
+The CLI can connect thread and item observations from two synthetic JSONL files as explicit ID-match candidates:
+
+```sh
+node dist/cli/main.js --thread-evidence-jsonl tests/fixtures/thread-read-demo.jsonl tests/fixtures/items-page-demo.jsonl sample
+```
+
+`thread_indices` and `page_index` refer to the output `thread_records` and `page_records` arrays; each record's `line` identifies the original line. Diagnostics are retained separately. Matching source aliases and IDs do not prove a common source or relationship. IDs may be sensitive, and all results are held in memory.
+
 `normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, run the Codex CLI, or collect records. See the [schema research](docs/research/codex-app-server-schema.md).
 
 The development CLI reads JSONL with one `result` object per line. This synthetic example preserves order, line numbers, duplicates, and malformed-line diagnostics on standard output. All results are held in memory and identifiers may be sensitive. No server is started and sessions are not discovered automatically.
