@@ -56,7 +56,7 @@ The CLI can connect thread and item observations from two synthetic JSONL files 
 node dist/cli/main.js --thread-evidence-jsonl tests/fixtures/thread-read-demo.jsonl tests/fixtures/items-page-demo.jsonl sample
 ```
 
-`thread_indices` and `page_index` refer to the output `thread_records` and `page_records` arrays; each record's `line` identifies the original line. Diagnostics are retained separately. Matching source aliases and IDs do not prove a common source or relationship. IDs may be sensitive, and all results are held in memory.
+`thread_indices` and `page_index` refer to the output `thread_records` and `page_records` arrays; each record's `line` identifies the original line. Diagnostics are retained separately. Matching source aliases and IDs do not prove a common source or relationship. IDs may be sensitive, and all results are held in memory. This command limits each input file to 16 MiB including LF and fails without partial results if exceeded. This is not an upper bound on total memory use.
 
 `normalizeCodexThreadReadV0166` accepts the `result` object of a `thread/read` response, not the whole JSON-RPC envelope, and preserves explicit thread, parent, session, and fork-origin IDs separately. A missing thread ID yields an unsupported result; other missing IDs become `null`, regardless of schema requirements. `0.166.0` is the caller-selected schema reference, not validation of the whole schema, input version, or authenticity. Results are `unverified` and IDs may be sensitive. The function does not start a server, run the Codex CLI, or collect records. See the [schema research](docs/research/codex-app-server-schema.md).
 
