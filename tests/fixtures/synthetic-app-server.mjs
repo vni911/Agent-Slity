@@ -36,7 +36,9 @@ lines.on("line", (line) => {
     const nextCursor = page === 1 || scenario === "repeat" ? "PRIVATE_CURSOR" : null;
     send({ id: request.id, result: { data: [{ turnId: "turn", item: { type: "collabAgentToolCall", id: "item",
       senderThreadId: "parent", receiverThreadIds: ["child"], tool: "spawnAgent", status: "completed", prompt: "PRIVATE_PROMPT" } },
-    { item: { type: "future", text: "PRIVATE_MESSAGE" } }], nextCursor } });
+    { item: { type: "future", text: "PRIVATE_MESSAGE" } },
+    { turnId: "turn", item: { type: "subAgentActivity", id: "activity", agentThreadId: "child", kind: "started",
+      model: "synthetic-model", reasoningEffort: "high", agentPath: "PRIVATE_AGENT_PATH" } }], nextCursor } });
   } else {
     process.stderr.write("INVALID_SYNTHETIC_REQUEST\n");
     lines.close();

@@ -53,4 +53,43 @@ describe("저장 항목 페이지 정규화", () => {
     expect(result.items[1]).toMatchObject({ receiver_thread_ids: null });
     expect(result.items[2]).toMatchObject({ receiver_thread_ids: [] });
   });
+
+  it("하위 에이전트 활동과 명시된 설정만 순서·중복을 보존해 출력한다", () => {
+    const entry = { turnId: "turn", item: { type: "subAgentActivity", id: "item", agentThreadId: "child",
+      kind: "started", model: "model-x", reasoningEffort: "high", agentPath: "PRIVATE_PATH", text: "PRIVATE_TEXT" } };
+    const result = normalizeCodexItemsPageV0166({ data: [entry, entry, { item: { type: "other" } }], nextCursor: null }, "sample");
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items).toEqual([
+      { index: 0, kind: "subagent_activity", turn_id: "turn", item_id: "item", agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
+      { index: 1, kind: "subagent_activity", turn_id: "turn", item_id: "item", agent_thread_id: "child", activity: "started", reported_model: "model-x", reported_reasoning_effort: "high" },
+      { index: 2, kind: "unsupported" },
+    ]);
+    expect(result.verification_status).toBe("unverified");
+    expect(JSON.stringify(result)).not.toContain("PRIVATE_");
+  });
+
+  it("하위 에이전트 활동의 누락·유효하지 않은 값과 getter는 추정하지 않는다", () => {
+    let called = false;
+    const item = { type: "subAgentActivity", kind: "future", agentThreadId: " ", model: 5 };
+    Object.defineProperty(item, "reasoningEffort", { get() { called = true; throw new Error("PRIVATE_GETTER"); } });
+    const result = normalizeCodexItemsPageV0166({ data: [{ item }] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items).toEqual([{ index: 0, kind: "subagent_activity", turn_id: null, item_id: null,
+      agent_thread_id: null, activity: null, reported_model: null, reported_reasoning_effort: null }]);
+    expect(called).toBe(false);
+    for (const activity of ["started", "interacted", "interrupted", "completed"]) {
+      const pageResult = normalizeCodexItemsPageV0166({ data: [{ item: { type: "subAgentActivity", kind: activity } }] });
+      expect(pageResult.kind === "page" && pageResult.items[0]).toMatchObject({ activity });
+    }
+  });
+
+  it("활동 문자열을 256 UTF-16 코드 단위로 제한하고 초과를 null로 둔다", () => {
+    const maximum = "x".repeat(256);
+    const tooLong = "x".repeat(257);
+    const result = normalizeCodexItemsPageV0166({ data: [{ turnId: tooLong, item: { type: "subAgentActivity",
+      id: maximum, agentThreadId: tooLong, model: tooLong, reasoningEffort: maximum } }] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items[0]).toMatchObject({ turn_id: null, item_id: maximum, agent_thread_id: null,
+      reported_model: null, reported_reasoning_effort: maximum });
+  });
 });

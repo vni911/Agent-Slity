@@ -257,7 +257,7 @@ test("부모 후보 CLI는 역순·중복과 진단의 입력 위치를 보존�
 test("저장 항목 페이지 JSONL의 순서·중복·진단과 미확인을 보존한다", async () => {
   const dir = await mkdtemp(join(tmpdir(), "agent-slity-items-page-"));
   const path = join(dir, "input.jsonl");
-  const page = '{"data":[{"turnId":"turn","item":{"type":"collabAgentToolCall","id":"item","senderThreadId":"parent","receiverThreadIds":["child"],"tool":"spawnAgent","status":"completed","prompt":"PRIVATE_PROMPT"}},{"item":{"type":"agentMessage","text":"PRIVATE_MESSAGE"}}],"nextCursor":"PRIVATE_CURSOR"}';
+  const page = '{"data":[{"turnId":"turn","item":{"type":"collabAgentToolCall","id":"item","senderThreadId":"parent","receiverThreadIds":["child"],"tool":"spawnAgent","status":"completed","prompt":"PRIVATE_PROMPT"}},{"item":{"type":"agentMessage","text":"PRIVATE_MESSAGE"}},{"turnId":"turn","item":{"type":"subAgentActivity","id":"activity","agentThreadId":"child","kind":"started","model":"synthetic-model","agentPath":"PRIVATE_PATH"}}],"nextCursor":"PRIVATE_CURSOR"}';
   const input = [page, page, '{"data":[]}', '{}', '{', ''].join("\n");
   await writeFile(path, input);
   try {
@@ -273,6 +273,8 @@ test("저장 항목 페이지 JSONL의 순서·중복·진단과 미확인을 �
     assert.equal(json.results[0].verification_status, "unverified");
     assert.deepEqual(json.results[0].items[0].receiver_thread_ids, ["child"]);
     assert.equal(json.results[0].items[1].kind, "unsupported");
+    assert.deepEqual(json.results[0].items[2], { index: 2, kind: "subagent_activity", turn_id: "turn", item_id: "activity",
+      agent_thread_id: "child", activity: "started", reported_model: "synthetic-model", reported_reasoning_effort: null });
     assert.equal(json.results[2].next_page, "unknown");
     assert.equal(json.results[3].reason, "invalid_page");
     assert.equal(json.results[4].code, "invalid_json");
