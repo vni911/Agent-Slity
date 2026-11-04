@@ -2,6 +2,44 @@ import { describe, expect, it } from "vitest";
 import { normalizeCodexItemsPageV0166 } from "../../src/index.js";
 
 describe("저장 항목 페이지 정규화", () => {
+  it("파일 변경 유형과 상태의 순서·중복만 보존하고 경로와 diff는 제외한다", () => {
+    const change = (type: string) => ({ kind: { type, move_path: "PRIVATE_MOVE" }, path: "PRIVATE_PATH", diff: "PRIVATE_DIFF" });
+    const result = normalizeCodexItemsPageV0166({ data: [{ turnId: "turn", startedAtMs: 0, item: { type: "fileChange", id: "item", status: "completed",
+      changes: [change("add"), change("update"), change("delete"), change("add"), change("future"), null] } }] }, "sample");
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items).toEqual([{ index: 0, kind: "file_change", turn_id: "turn", item_id: "item", started_at_ms: 0,
+      completed_at_ms: null, status: "completed", change_kinds: ["add", "update", "delete", "add", null, null] }]);
+    expect(result.verification_status).toBe("unverified");
+    expect(JSON.stringify(result)).not.toContain("PRIVATE_");
+  });
+
+  it("변경 배열 전체 한도·누락·getter를 추론 없이 처리한다", () => {
+    const entry = { item: { type: "fileChange", status: "future", changes: Array(10000).fill({ kind: { type: "add" } }) } };
+    let called = false;
+    const item = { type: "fileChange", status: "failed" };
+    Object.defineProperty(item, "changes", { get() { called = true; throw new Error("PRIVATE"); } });
+    const result = normalizeCodexItemsPageV0166({ data: [entry, entry, { item }, { item: { type: "fileChange", changes: [] } }] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items[0]).toMatchObject({ status: null, change_kinds: Array(10000).fill("add") });
+    expect(result.items[1]).toMatchObject({ change_kinds: null });
+    expect(result.items[2]).toMatchObject({ status: "failed", change_kinds: null });
+    expect(result.items[3]).toMatchObject({ change_kinds: [] });
+    expect(called).toBe(false);
+  });
+
+  it("모든 파일 변경 상태를 보존하고 내부 getter를 실행하지 않는다", () => {
+    let called = false;
+    const change = {};
+    const kind = {};
+    Object.defineProperty(change, "kind", { get() { called = true; throw new Error("PRIVATE"); } });
+    Object.defineProperty(kind, "type", { get() { called = true; throw new Error("PRIVATE"); } });
+    const result = normalizeCodexItemsPageV0166({ data: ["inProgress", "completed", "failed", "declined"].map((status) =>
+      ({ item: { type: "fileChange", status, changes: [change, { kind }] } })) });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items.map((item) => item.kind === "file_change" ? [item.status, item.change_kinds] : null)).toEqual(
+      ["inProgress", "completed", "failed", "declined"].map((status) => [status, [null, null]]));
+    expect(called).toBe(false);
+  });
   it("명령 실행의 상태와 종료 코드만 보존하고 민감한 원문은 제외한다", () => {
     const entry = { turnId: "turn", startedAtMs: 0, completedAtMs: 12, item: { type: "commandExecution", id: "item",
       status: "completed", exitCode: 0, durationMs: 12, command: "PRIVATE_COMMAND", cwd: "PRIVATE_PATH", aggregatedOutput: "PRIVATE_OUTPUT" } };

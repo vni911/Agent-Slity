@@ -54,6 +54,8 @@ Collaboration calls and subagent activities preserve explicit Unix milliseconds 
 
 `commandExecution` entries retain only IDs, explicit timestamps, status, an int32 exit code, and a nonnegative safe-integer duration. Missing or invalid values are `null`; command text, paths, and output are excluded. These observations do not prove execution or test success. These entries previously appeared as unsupported, so consumer compatibility with the new output kind is unverified.
 
+`fileChange` entries retain IDs, explicit timestamps, status, and the ordered change kinds; paths, move paths, and diffs are excluded. A page is limited to 10,000 change kinds in total; an item exceeding the remaining limit has a `null` array. Missing and over-limit arrays are not distinguished. These observations do not prove changes succeeded, and consumer compatibility with the new output kind is unverified.
+
 The CLI can connect thread and item observations from two synthetic JSONL files as explicit ID-match candidates:
 
 ```sh

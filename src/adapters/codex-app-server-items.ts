@@ -2,6 +2,7 @@ const TOOLS = new Set(["spawnAgent", "sendInput", "resumeAgent", "wait", "closeA
 const STATUSES = new Set(["inProgress", "completed", "failed", "interrupted"]);
 const ACTIVITIES = new Set(["started", "interacted", "interrupted", "completed"]);
 const COMMAND_STATUSES = new Set(["inProgress", "completed", "failed", "declined"]);
+const CHANGE_KINDS = new Set(["add", "update", "delete"]);
 const LIMIT = 10000;
 
 export interface CollabItemObservation {
@@ -39,9 +40,19 @@ export interface CommandExecutionObservation {
   exit_code: number | null;
   duration_ms: number | null;
 }
+export interface FileChangeObservation {
+  index: number;
+  kind: "file_change";
+  turn_id: string | null;
+  item_id: string | null;
+  started_at_ms: number | null;
+  completed_at_ms: number | null;
+  status: string | null;
+  change_kinds: (string | null)[] | null;
+}
 export type ItemsPageResult =
   | { kind: "page"; source_id: string | null; schema_reference: "0.166.0"; verification_status: "unverified";
-      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | { index: number; kind: "unsupported" })[] }
+      next_page: "available" | "none" | "unknown"; items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | FileChangeObservation | { index: number; kind: "unsupported" })[] }
   | { kind: "unsupported"; source_id: string | null; schema_reference: "0.166.0"; reason: "invalid_page" };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -79,6 +90,15 @@ function exitCode(value: unknown): number | null {
 function duration(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
+function changeKinds(value: unknown, remaining: number): (string | null)[] | null {
+  const length = arrayLength(value);
+  if (length === null || length > remaining || !value || typeof value !== "object") return null;
+  return Array.from({ length }, (_, index) => {
+    const change = own(value, String(index));
+    const kind = isObject(change) ? own(change, "kind") : undefined;
+    return isObject(kind) ? allowed(own(kind, "type"), CHANGE_KINDS) : null;
+  });
+}
 
 /** 전체 스키마·출처·실행의 진위는 확인하지 않는다. 입력은 JSON-RPC의 result 객체다. */
 export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string): ItemsPageResult {
@@ -93,8 +113,9 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
   }
   const cursor = own(input, "nextCursor");
   const next_page = cursor === null ? "none" : typeof cursor === "string" && cursor.length > 0 ? "available" : "unknown";
-  const items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | { index: number; kind: "unsupported" })[] = [];
+  const items: (CollabItemObservation | SubagentActivityObservation | CommandExecutionObservation | FileChangeObservation | { index: number; kind: "unsupported" })[] = [];
   let remainingReceivers = LIMIT;
+  let remainingChanges = LIMIT;
   for (let index = 0; index < length; index++) {
     const entry = own(data, String(index));
     const item = isObject(entry) ? own(entry, "item") : undefined;
@@ -103,6 +124,14 @@ export function normalizeCodexItemsPageV0166(input: unknown, sourceId?: string):
       continue;
     }
     const type = own(item, "type");
+    if (type === "fileChange") {
+      const kinds = changeKinds(own(item, "changes"), remainingChanges);
+      if (kinds) remainingChanges -= kinds.length;
+      items.push({ index, kind: "file_change", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
+        started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),
+        status: allowed(own(item, "status"), COMMAND_STATUSES), change_kinds: kinds });
+      continue;
+    }
     if (type === "commandExecution") {
       items.push({ index, kind: "command_execution", turn_id: boundedValue(own(entry, "turnId")), item_id: boundedValue(own(item, "id")),
         started_at_ms: timestamp(own(entry, "startedAtMs")), completed_at_ms: timestamp(own(entry, "completedAtMs")),
