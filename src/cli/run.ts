@@ -19,6 +19,8 @@ export interface CliResult {
   stderr: string;
 }
 
+const EVIDENCE_MAX_FILE_BYTES = 16 * 1024 * 1024;
+
 /** Windows의 대체 데이터 스트림과 장치 경로는 일반 새 파일로 취급하지 않는다. */
 function unsafeWindowsOutput(path: string): boolean {
   if (process.platform !== "win32") return false;
@@ -55,6 +57,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "항목 관측 후보는 실제 항목이나 실행의 동일성을 증명하지 않습니다.",
         "스레드 관측 후보는 실제 동일 스레드나 부모·자식 관계를 증명하지 않습니다.",
         "스레드와 항목 후보의 별칭은 동일 출처를 인증하지 않습니다.",
+        "스레드와 항목 후보 입력은 파일마다 최대 16 MiB입니다.",
         "입력 요약은 중복을 포함한 정규화 결과 수이며 실제 고유 이벤트 수가 아닙니다.",
         "",
       ].join("\n"),
@@ -74,11 +77,11 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       const threadLines: number[] = [];
       const pageLines: number[] = [];
       const diagnostics: { input: "threads" | "pages"; line: number; code: string }[] = [];
-      for await (const entry of readJsonlFile(args[1])) {
+      for await (const entry of readJsonlFile(args[1], { maxFileBytes: EVIDENCE_MAX_FILE_BYTES })) {
         if (entry.kind === "diagnostic") diagnostics.push({ input: "threads", line: entry.line, code: entry.code });
         else { threadLines.push(entry.line); threads.push(normalizeCodexThreadReadV0166(entry.value, sourceId)); }
       }
-      for await (const entry of readJsonlFile(args[2])) {
+      for await (const entry of readJsonlFile(args[2], { maxFileBytes: EVIDENCE_MAX_FILE_BYTES })) {
         if (entry.kind === "diagnostic") diagnostics.push({ input: "pages", line: entry.line, code: entry.code });
         else { pageLines.push(entry.line); pages.push(normalizeCodexItemsPageV0166(entry.value, sourceId)); }
       }

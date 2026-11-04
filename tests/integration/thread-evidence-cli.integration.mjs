@@ -77,3 +77,27 @@ test("미지원 레코드와 다중 페이지의 인덱스 및 빈 입력을 구
     assert.deepEqual([output.thread_records, output.page_records, output.diagnostics, output.groups], [[], [], [], []]);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test("어느 입력이든 크기 제한 초과 시 부분 출력 없이 실패한다", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agent-slity-evidence-"));
+  const threads = join(dir, "threads.jsonl");
+  const pages = join(dir, "pages.jsonl");
+  const oversized = Buffer.alloc(16 * 1024 * 1024 + 1, 0x20);
+  try {
+    await writeFile(threads, "");
+    await writeFile(pages, oversized.subarray(0, oversized.length - 1));
+    const boundary = run(["--thread-evidence-jsonl", threads, pages, "sample"]);
+    assert.equal(boundary.status, 0);
+    assert.equal(JSON.parse(boundary.stdout).diagnostics[0].code, "line_too_long");
+    for (const oversizedFile of [threads, pages]) {
+      await writeFile(threads, '{"thread":{"id":"PRIVATE_ID"}}\n');
+      await writeFile(pages, '{"data":[],"nextCursor":null}\n');
+      await writeFile(oversizedFile, oversized);
+      const result = run(["--thread-evidence-jsonl", threads, pages, "sample"]);
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, "");
+      assert.ok(!result.stderr.includes("PRIVATE_"));
+      assert.ok(!result.stderr.includes(dir));
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

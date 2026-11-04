@@ -7,6 +7,8 @@ const DEFAULT_MAX_LINE_BYTES = 8 * 1024 * 1024;
 
 export interface JsonlReadOptions {
   maxLineBytes?: number;
+  /** LF를 포함한 전체 파일 바이트 제한. 생략하면 제한하지 않는다. 초과 오류 전 일부 결과가 이미 반환될 수 있다. */
+  maxFileBytes?: number;
 }
 
 export type JsonlReadResult =
@@ -33,12 +35,17 @@ export async function* readJsonlFile(
   if (!Number.isSafeInteger(maxLineBytes) || maxLineBytes < 1) {
     throw new RangeError("maxLineBytes는 양의 정수여야 합니다.");
   }
+  const maxFileBytes = options.maxFileBytes;
+  if (maxFileBytes !== undefined && (!Number.isSafeInteger(maxFileBytes) || maxFileBytes < 0)) {
+    throw new RangeError("maxFileBytes는 음이 아닌 정수여야 합니다.");
+  }
 
   let input: ReadStream | undefined;
   let line = 1;
   let pieces: Buffer[] = [];
   let length = 0;
   let tooLong = false;
+  let totalBytes = 0;
 
   function append(part: Buffer): void {
     if (tooLong) return;
@@ -73,6 +80,8 @@ export async function* readJsonlFile(
     input = createReadStream(path);
     for await (const chunk of input) {
       const bytes = chunk as Buffer;
+      if (maxFileBytes !== undefined && bytes.length > maxFileBytes - totalBytes) throw new JsonlReadError("FILE_TOO_LARGE");
+      totalBytes += bytes.length;
       let start = 0;
       while (start < bytes.length) {
         const newline = bytes.indexOf(0x0a, start);
@@ -93,6 +102,7 @@ export async function* readJsonlFile(
       if (result) yield result;
     }
   } catch (error: unknown) {
+    if (error instanceof JsonlReadError) throw error;
     const rawCode = (error as NodeJS.ErrnoException)?.code;
     const code = typeof rawCode === "string" && /^E[A-Z0-9]+$/.test(rawCode)
       ? rawCode

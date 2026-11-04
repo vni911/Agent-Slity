@@ -25,6 +25,31 @@ async function withFile(content: string | Buffer, run: (path: string) => Promise
 }
 
 describe("JSONL 읽기 전용 가져오기", () => {
+  it("전체 바이트 제한은 UTF-8과 CRLF·빈 줄을 포함하고 경계를 허용한다", async () => {
+    const source = '"한"\r\n\n';
+    const size = Buffer.byteLength(source);
+    await withFile(source, async (path) => {
+      expect(await collect(path, { maxFileBytes: size })).toEqual([{ kind: "record", line: 1, value: "한" }]);
+      await expect(collect(path, { maxFileBytes: size - 1 })).rejects.toMatchObject({ code: "FILE_TOO_LARGE" });
+      expect(await collect(path)).toHaveLength(1);
+    });
+    await withFile("", async (path) => { expect(await collect(path, { maxFileBytes: 0 })).toEqual([]); });
+    await withFile("x", async (path) => {
+      await expect(collect(path, { maxFileBytes: 0 })).rejects.toMatchObject({ code: "FILE_TOO_LARGE" });
+      for (const limit of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+        await expect(collect(path, { maxFileBytes: limit })).rejects.toBeInstanceOf(RangeError);
+      }
+    });
+  });
+
+  it("여러 청크를 읽을 때 상한 초과 전 이미 반환한 결과가 있을 수 있다", async () => {
+    await withFile('{}\n' + ' '.repeat(131072), async (path) => {
+      const iterator = readJsonlFile(path, { maxFileBytes: 65536 });
+      expect(await iterator.next()).toMatchObject({ done: false, value: { kind: "record", line: 1 } });
+      await expect(iterator.next()).rejects.toMatchObject({ code: "FILE_TOO_LARGE" });
+    });
+  });
+
   it("CRLF, 빈 줄, 중복과 마지막 개행 없는 값을 순서와 줄 번호대로 반환하고 원본을 보존한다", async () => {
     const source = '{"type":"thread.started","thread_id":"합성"}\r\n\r\n{"type":"turn.started"}\r\n{"type":"turn.started"}\r\nnull';
     await withFile(source, async (path) => {
