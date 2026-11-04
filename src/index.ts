@@ -21,3 +21,5 @@ export { groupItemObservations } from "./core/item-observations.js";
 export type { ItemObservation, ItemObservationGroup, ItemObservationResult } from "./core/item-observations.js";
 export { groupThreadObservations } from "./core/thread-observations.js";
 export type { ThreadObservation, ThreadObservationGroup, ThreadObservationResult } from "./core/thread-observations.js";
+export { findThreadEvidenceCandidates } from "./core/thread-evidence-candidates.js";
+export type { ThreadEvidenceCandidate } from "./core/thread-evidence-candidates.js";
