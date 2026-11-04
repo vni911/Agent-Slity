@@ -2,6 +2,36 @@ import { describe, expect, it } from "vitest";
 import { normalizeCodexItemsPageV0166 } from "../../src/index.js";
 
 describe("저장 항목 페이지 정규화", () => {
+  it("명령 실행의 상태와 종료 코드만 보존하고 민감한 원문은 제외한다", () => {
+    const entry = { turnId: "turn", startedAtMs: 0, completedAtMs: 12, item: { type: "commandExecution", id: "item",
+      status: "completed", exitCode: 0, durationMs: 12, command: "PRIVATE_COMMAND", cwd: "PRIVATE_PATH", aggregatedOutput: "PRIVATE_OUTPUT" } };
+    const result = normalizeCodexItemsPageV0166({ data: [entry, entry] }, "sample");
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items).toEqual([0, 1].map((index) => ({ index, kind: "command_execution", turn_id: "turn", item_id: "item",
+      started_at_ms: 0, completed_at_ms: 12, status: "completed", exit_code: 0, duration_ms: 12 })));
+    expect(JSON.stringify(result)).not.toContain("PRIVATE_");
+    expect(result.verification_status).toBe("unverified");
+  });
+
+  it("명령 메타데이터의 누락·범위·타입을 확인하고 상충 값은 추론하지 않는다", () => {
+    const command = (status: unknown, exitCode: unknown, durationMs: unknown) => ({ item: { type: "commandExecution", status, exitCode, durationMs } });
+    const result = normalizeCodexItemsPageV0166({ data: [command("failed", -2147483648, 0), command("declined", 2147483647, Number.MAX_SAFE_INTEGER),
+      command("future", 2147483648, -1), command("completed", 1.5, Number.MAX_SAFE_INTEGER + 1), command(null, null, "12")] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items.map((item) => item.kind === "command_execution" ? [item.status, item.exit_code, item.duration_ms] : null)).toEqual([
+      ["failed", -2147483648, 0], ["declined", 2147483647, Number.MAX_SAFE_INTEGER], [null, null, null], ["completed", null, null], [null, null, null],
+    ]);
+  });
+
+  it("명령 상태 inProgress를 보존하고 getter는 실행하지 않는다", () => {
+    let called = false;
+    const item = { type: "commandExecution", status: "inProgress" };
+    Object.defineProperty(item, "exitCode", { get() { called = true; throw new Error("PRIVATE"); } });
+    const result = normalizeCodexItemsPageV0166({ data: [{ item }] });
+    if (result.kind !== "page") throw new Error("페이지가 아닙니다.");
+    expect(result.items[0]).toMatchObject({ kind: "command_execution", status: "inProgress", exit_code: null });
+    expect(called).toBe(false);
+  });
   it("명시된 시작·종료 밀리초만 보존하며 시간 순서를 추론하지 않는다", () => {
     const item = { type: "collabAgentToolCall" };
     let called = false;

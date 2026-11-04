@@ -52,6 +52,8 @@ node dist/cli/main.js --items-page-jsonl tests/fixtures/items-page-demo.jsonl sa
 
 협업 호출과 하위 에이전트 활동은 항목에 명시된 안전한 정수 Unix 밀리초를 `started_at_ms`와 `completed_at_ms`로 보존합니다. 검사는 파싱된 JavaScript 값 기준이며 JSON 숫자의 원본 정밀성은 보장하지 않습니다. 누락·null·잘못된 값·안전한 정수 범위 밖의 값은 `null`이며 시간 순서나 실행을 검증하지 않습니다. 추가 필드를 거부하는 기존 소비자와의 호환성은 확인 필요입니다.
 
+`commandExecution` 항목은 ID·명시적 시각·상태·int32 종료 코드·음이 아닌 안전 정수 소요 시간만 보존합니다. 누락하거나 유효하지 않은 값은 `null`이며 명령·경로·출력은 제외합니다. 이 관측은 실제 실행이나 테스트 성공을 증명하지 않습니다. 기존에 미지원으로 표시되던 항목의 출력 유형이 바뀌므로 소비자 호환성은 확인 필요입니다.
+
 두 합성 JSONL의 스레드와 항목을 명시적 ID 일치 후보로 연결할 수 있습니다.
 
 ```sh
