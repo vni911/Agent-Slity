@@ -9,6 +9,8 @@ export { findParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export type { ParentThreadCandidateGroup, ParentThreadCandidates } from "./core/parent-thread-candidates.js";
 export { CodexReadTransport, ReadTransportError } from "./adapters/codex-read-transport.js";
 export type { ReadTransportErrorCode } from "./adapters/codex-read-transport.js";
+export { collectCodexThreadPagesV0166 } from "./core/thread-page-collector.js";
+export type { CollectionStop, ThreadPageCollection, ThreadReadClient } from "./core/thread-page-collector.js";
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { findSourceOverlaps } from "./core/source-overlap.js";
