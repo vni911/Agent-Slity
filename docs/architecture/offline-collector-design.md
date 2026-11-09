@@ -41,7 +41,7 @@
 
 ## full turn 페이지 수집 경로
 
-`collectCodexTurnPagesV0166`는 이미 초기화된 읽기 클라이언트에 사용자가 지정한 스레드의 메타데이터를 요청한 뒤 `listTurns`를 호출한다. `CodexReadTransport.listTurns`는 `thread/turns/list`에 `itemsView: full`, `sortDirection: asc`, `limit: 100`을 명시한다. 기존 item 수집 API는 변경하지 않으며 자동 fallback하지 않는다. `collectFromChildV0166`도 기존 item 경로를 유지한다. 새 경로의 서버 생성·자원 종료는 호출자가 담당한다.
+`collectCodexTurnPagesV0166`는 이미 초기화된 읽기 클라이언트에 사용자가 지정한 스레드의 메타데이터를 요청한 뒤 `listTurns`를 호출한다. `CodexReadTransport.listTurns`는 `thread/turns/list`에 `itemsView: full`, `sortDirection: asc`, `limit: 100`을 명시한다. 기존 item 수집 API는 변경하지 않으며 자동 fallback하지 않는다. `collectFromChildV0166`도 기존 item 경로를 유지한다. `collectTurnsFromChildV0166`는 호출자가 이미 생성한 자식과 파이프의 소유권을 받아 turn 경로를 초기화·수집하고 종료를 시도한다. 종료 관측은 직접 자식에 한정하며 이 경로의 실제 서버 연동은 확인 필요다. 서버 생성과 버전 선택은 호출자가 담당한다.
 
 turn 페이지는 item 페이지와 별도 형식이다. `normalizeCodexTurnsPageV0166`는 full이 아닌 view나 손상된 item 배열을 미지원 페이지로 남긴다. turn의 중복과 순서 및 turn 안 item 인덱스를 보존한다. 반환된 ID는 저장 JSONL ID와 동일하다고 가정하지 않는다. userMessage·agentMessage는 유형·ID·제공된 item 시각만 남기고 본문은 제외한다. 기존 협업·명령·파일 변경 정규화는 페이지 전체에 합산 예산을 공유해 재사용하며 알 수 없는 유형은 위치를 남긴다.
 

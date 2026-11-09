@@ -10,6 +10,7 @@ function send(message) {
 createInterface({ input: process.stdin }).on("line", line => {
   const r = JSON.parse(line);
   if (phase === "initialize" && r.method === "initialize") {
+    if (scenario === "init_error") { send({ id: r.id, error: { message: "PRIVATE_INIT" } }); return; }
     phase = "initialized"; send({ id: r.id, result: {} });
   } else if (phase === "initialized" && r.method === "initialized") phase = "thread";
   else if (phase === "thread" && r.method === "thread/read" && r.params?.threadId === "child") {
@@ -18,6 +19,7 @@ createInterface({ input: process.stdin }).on("line", line => {
     r.params?.itemsView === "full" && r.params?.sortDirection === "asc" && r.params?.limit === 100 &&
     (page === 0 ? r.params?.cursor === undefined : r.params?.cursor === "PRIVATE_CURSOR")) {
     page++;
+    if (scenario === "hang" && page === 2) { process.stderr.write("SYNTHETIC_TURN_STARTED\n"); return; }
     if (page === 2 && scenario === "error") send({ id: r.id, error: { message: "PRIVATE_SERVER_ERROR" } });
     else send({ id: r.id, result: { data: [{ id: "turn", status: "completed", itemsView: "full",
       items: [{ type: "userMessage", id: "item", content: [{ type: "text", text: "PRIVATE_MESSAGE" }] }] }],
