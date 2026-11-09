@@ -2,16 +2,39 @@ import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { CodexReadTransport, ReadTransportError } from "../adapters/codex-read-transport.js";
 import { collectCodexThreadPagesV0166 } from "./thread-page-collector.js";
 import type { ThreadPageCollection } from "./thread-page-collector.js";
+import { collectCodexTurnPagesV0166 } from "./turn-page-collector.js";
+import type { TurnPageCollection } from "./turn-page-collector.js";
 
 export interface ChildThreadCollectionResult {
   collection: ThreadPageCollection | null;
   initialization_error: "cancelled" | "timeout" | "server_error" | "invalid_input" | "transport_error" | null;
   cleanup_status: "exit_observed" | "unknown";
 }
+export interface ChildTurnCollectionResult {
+  collection: TurnPageCollection | null;
+  initialization_error: ChildThreadCollectionResult["initialization_error"];
+  cleanup_status: ChildThreadCollectionResult["cleanup_status"];
+}
+
+type CollectionOptions = { maxPages?: number; signal?: AbortSignal };
 
 /** 호출자가 생성한 자식과 파이프의 소유권을 넘겨받으며, 종료 시 자식 종료를 시도한다. */
 export async function collectFromChildV0166(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
-  options: { maxPages?: number; signal?: AbortSignal } = {}): Promise<ChildThreadCollectionResult> {
+  options: CollectionOptions = {}): Promise<ChildThreadCollectionResult> {
+  return collectOwnedChild(child, threadId, sourceId, options, collectCodexThreadPagesV0166);
+}
+
+/** 호출자가 생성한 자식에서 full turn 페이지를 수집하고 직접 자식의 종료를 관찰한다. */
+export async function collectTurnsFromChildV0166(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
+  options: CollectionOptions = {}): Promise<ChildTurnCollectionResult> {
+  return collectOwnedChild(child, threadId, sourceId, options, collectCodexTurnPagesV0166);
+}
+
+async function collectOwnedChild<T>(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
+  options: CollectionOptions, collect: (transport: CodexReadTransport, threadId: string, sourceId: string,
+    options: CollectionOptions) => Promise<T>): Promise<{ collection: T | null;
+      initialization_error: ChildThreadCollectionResult["initialization_error"];
+      cleanup_status: ChildThreadCollectionResult["cleanup_status"] }> {
   let exited = child.exitCode !== null || child.signalCode !== null;
   let closed = false;
   const alreadyClosed = exited && child.stdin.closed && child.stdout.closed && child.stderr.closed;
@@ -27,7 +50,8 @@ export async function collectFromChildV0166(child: ChildProcessWithoutNullStream
   child.once("close", onChildClose);
   child.stderr.on("error", onStderrError);
   child.stderr.resume();
-  const result: ChildThreadCollectionResult = { collection: null, initialization_error: null, cleanup_status: "unknown" };
+  const result: { collection: T | null; initialization_error: ChildThreadCollectionResult["initialization_error"];
+    cleanup_status: ChildThreadCollectionResult["cleanup_status"] } = { collection: null, initialization_error: null, cleanup_status: "unknown" };
   try {
     const maxPages = options.maxPages ?? 10;
     if (typeof threadId !== "string" || !threadId.trim() || threadId.length > 65536 ||
@@ -36,7 +60,7 @@ export async function collectFromChildV0166(child: ChildProcessWithoutNullStream
       result.initialization_error = "invalid_input";
     } else {
       await transport.initialize(options.signal);
-      result.collection = await collectCodexThreadPagesV0166(transport, threadId, sourceId, options);
+      result.collection = await collect(transport, threadId, sourceId, options);
     }
   } catch (error: unknown) {
     if (error instanceof ReadTransportError && (error.code === "cancelled" || error.code === "timeout" || error.code === "server_error")) {
