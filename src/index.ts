@@ -3,6 +3,10 @@ export type { JsonlReadOptions, JsonlReadResult } from "./adapters/jsonl-reader.
 export { normalizeCodexExecLine } from "./adapters/codex-exec-normalizer.js";
 export { normalizeCodexThreadReadV0166 } from "./adapters/codex-app-server-thread-read.js";
 export type { ThreadReadResult, ThreadReadSource } from "./adapters/codex-app-server-thread-read.js";
+export { normalizeCodexTurnsPageV0166 } from "./adapters/codex-app-server-turns.js";
+export type { TurnsPageResult, TurnObservation, TurnItemObservation } from "./adapters/codex-app-server-turns.js";
+export { collectCodexTurnPagesV0166 } from "./core/turn-page-collector.js";
+export type { TurnReadClient, TurnPageCollection } from "./core/turn-page-collector.js";
 export { normalizeCodexItemsPageV0166 } from "./adapters/codex-app-server-items.js";
 export type { CollabItemObservation, SubagentActivityObservation, CommandExecutionObservation, FileChangeObservation, ItemsPageResult } from "./adapters/codex-app-server-items.js";
 export { findParentThreadCandidates } from "./core/parent-thread-candidates.js";

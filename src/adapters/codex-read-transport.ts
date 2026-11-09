@@ -57,6 +57,13 @@ export class CodexReadTransport {
     return this.#send("thread/items/list", cursor === undefined ? { threadId, limit: 100 } : { threadId, limit: 100, cursor }, signal);
   }
 
+  listTurns(threadId: string, cursor?: string, signal?: AbortSignal): Promise<unknown> {
+    this.requireReady(threadId);
+    if (cursor !== undefined && (typeof cursor !== "string" || cursor.length === 0 || cursor.length > 65536)) throw new ReadTransportError("limit");
+    return this.#send("thread/turns/list", { threadId, limit: 100, itemsView: "full", sortDirection: "asc",
+      ...(cursor === undefined ? {} : { cursor }) }, signal);
+  }
+
   close(): void { this.fail("closed"); }
 
   private requireReady(threadId: string): void {
@@ -64,7 +71,7 @@ export class CodexReadTransport {
     if (typeof threadId !== "string" || threadId.trim().length === 0 || threadId.length > 65536) throw new ReadTransportError("limit");
   }
 
-  #send(method: "initialize" | "thread/read" | "thread/items/list", params: object, signal?: AbortSignal): Promise<unknown> {
+  #send(method: "initialize" | "thread/read" | "thread/items/list" | "thread/turns/list", params: object, signal?: AbortSignal): Promise<unknown> {
     if (signal?.aborted) { this.fail("cancelled"); return Promise.reject(new ReadTransportError("cancelled")); }
     if (this.pending.size >= this.maxPending || this.nextId > Number.MAX_SAFE_INTEGER) return Promise.reject(new ReadTransportError("limit"));
     const id = this.nextId++;
