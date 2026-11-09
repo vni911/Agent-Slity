@@ -21,6 +21,16 @@ function harness() {
 afterEach(() => vi.useRealTimers());
 
 describe("읽기 전용 프로토콜 전송", () => {
+  it("turn 목록은 full과 오름차순을 명시하고 잘못된 커서를 전송 전에 거부한다", async () => {
+    const h = harness(); await h.ready();
+    expect(() => h.transport.listTurns("x", "")).toThrowError(ReadTransportError);
+    const pending = h.transport.listTurns("x", "opaque");
+    expect(h.messages[2]).toEqual({ id: 2, method: "thread/turns/list", params: {
+      threadId: "x", limit: 100, itemsView: "full", sortDirection: "asc", cursor: "opaque" } });
+    h.input.write('{"id":2,"result":{"data":[],"nextCursor":null}}\n');
+    await expect(pending).resolves.toEqual({ data: [], nextCursor: null });
+    h.transport.close();
+  });
   it("초기화 이후 읽기 요청을 보내고 분할된 역순 응답을 ID로 연결한다", async () => {
     const h = harness();
     await h.ready();
