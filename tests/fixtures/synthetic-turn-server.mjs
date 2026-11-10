@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
 import process from "node:process";
 const scenario = process.argv[2];
+if (scenario === "ignore_term") { process.on("SIGTERM", () => {}); setInterval(() => {}, 1000); }
 let phase = "initialize", page = 0;
 function send(message) {
   const line = JSON.stringify(message) + "\n", cut = Math.floor(line.length / 2);

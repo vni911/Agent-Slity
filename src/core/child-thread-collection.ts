@@ -16,34 +16,47 @@ export interface ChildTurnCollectionResult {
   cleanup_status: ChildThreadCollectionResult["cleanup_status"];
 }
 
-type CollectionOptions = { maxPages?: number; signal?: AbortSignal };
+export interface ChildCollectionOptions {
+  maxPages?: number;
+  signal?: AbortSignal;
+  /** 직접 자식 종료 관측 기한. 기본 10000ms, 안전한 정수 1~30000ms. */
+  cleanupTimeoutMs?: number;
+  /** 기한 초과 시 직접 자식에만 SIGKILL을 시도하고 추가 1000ms 관측한다. 기본 false. */
+  forceKillOnTimeout?: boolean;
+}
 
 /** 호출자가 생성한 자식과 파이프의 소유권을 넘겨받으며, 종료 시 자식 종료를 시도한다. */
 export async function collectFromChildV0166(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
-  options: CollectionOptions = {}): Promise<ChildThreadCollectionResult> {
+  options: ChildCollectionOptions = {}): Promise<ChildThreadCollectionResult> {
   return collectOwnedChild(child, threadId, sourceId, options, collectCodexThreadPagesV0166);
 }
 
 /** 호출자가 생성한 자식에서 full turn 페이지를 수집하고 직접 자식의 종료를 관찰한다. */
 export async function collectTurnsFromChildV0166(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
-  options: CollectionOptions = {}): Promise<ChildTurnCollectionResult> {
+  options: ChildCollectionOptions = {}): Promise<ChildTurnCollectionResult> {
   return collectOwnedChild(child, threadId, sourceId, options, collectCodexTurnPagesV0166);
 }
 
 async function collectOwnedChild<T>(child: ChildProcessWithoutNullStreams, threadId: string, sourceId: string,
-  options: CollectionOptions, collect: (transport: CodexReadTransport, threadId: string, sourceId: string,
-    options: CollectionOptions) => Promise<T>): Promise<{ collection: T | null;
+  options: ChildCollectionOptions, collect: (transport: CodexReadTransport, threadId: string, sourceId: string,
+    options: ChildCollectionOptions) => Promise<T>): Promise<{ collection: T | null;
       initialization_error: ChildThreadCollectionResult["initialization_error"];
       cleanup_status: ChildThreadCollectionResult["cleanup_status"] }> {
-  let exited = child.exitCode !== null || child.signalCode !== null;
+  let spawnFailed = child.pid === undefined;
+  let exited = !spawnFailed && (child.exitCode !== null || child.signalCode !== null);
   let closed = false;
-  const alreadyClosed = exited && child.stdin.closed && child.stdout.closed && child.stderr.closed;
+  let cleanupTimeoutMs = 10000;
+  let forceKillOnTimeout = false;
+  const alreadyClosed = (exited || spawnFailed) && child.stdin.closed && child.stdout.closed && child.stderr.closed;
   let finishExit!: () => void;
   const exitPromise = new Promise<void>((resolve) => { finishExit = resolve; });
-  const onExit = (): void => { exited = true; finishExit(); };
+  const onExit = (): void => { if (!spawnFailed) exited = true; finishExit(); };
   if (!exited) child.once("exit", onExit);
   const transport = new CodexReadTransport(child.stdout, child.stdin);
-  const onChildError = (): void => { transport.close(); };
+  const onChildError = (): void => {
+    if (child.pid === undefined) { spawnFailed = true; finishExit(); }
+    transport.close();
+  };
   const onChildClose = (): void => { closed = true; finishExit(); child.removeListener("error", onChildError); };
   const onStderrError = (): void => {};
   child.on("error", onChildError);
@@ -54,10 +67,17 @@ async function collectOwnedChild<T>(child: ChildProcessWithoutNullStreams, threa
     cleanup_status: ChildThreadCollectionResult["cleanup_status"] } = { collection: null, initialization_error: null, cleanup_status: "unknown" };
   try {
     const maxPages = options.maxPages ?? 10;
+    const rawTimeout = options.cleanupTimeoutMs, rawForce = options.forceKillOnTimeout;
+    const timeout = rawTimeout === undefined ? 10000 : rawTimeout;
+    const force = rawForce === undefined ? false : rawForce;
+    const validCleanup = Number.isSafeInteger(timeout) && timeout >= 1 && timeout <= 30000 && typeof force === "boolean";
+    if (validCleanup) { cleanupTimeoutMs = timeout; forceKillOnTimeout = force; }
     if (typeof threadId !== "string" || !threadId.trim() || threadId.length > 65536 ||
         typeof sourceId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(sourceId) ||
-        !Number.isSafeInteger(maxPages) || maxPages < 1 || maxPages > 20) {
+        !Number.isSafeInteger(maxPages) || maxPages < 1 || maxPages > 20 || !validCleanup) {
       result.initialization_error = "invalid_input";
+    } else if (spawnFailed || exited || closed) {
+      result.initialization_error = "transport_error";
     } else {
       await transport.initialize(options.signal);
       result.collection = await collect(transport, threadId, sourceId, options);
@@ -69,12 +89,29 @@ async function collectOwnedChild<T>(child: ChildProcessWithoutNullStreams, threa
   } finally {
     transport.close();
     child.stderr.destroy();
-    if (!exited && !closed) {
-      try { child.kill(); } catch { /* 종료를 확인할 수 없으면 unknown으로 남긴다. */ }
+    const terminal = (): boolean => {
+      if (!spawnFailed && (child.exitCode !== null || child.signalCode !== null)) exited = true;
+      return exited || closed || spawnFailed;
+    };
+    const wait = async (ms: number): Promise<void> => {
+      if (terminal()) return;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      await Promise.race([exitPromise, new Promise<void>((resolve) => { timer = setTimeout(resolve, 1000); })]);
-      if (timer) clearTimeout(timer);
+      try { await Promise.race([exitPromise, new Promise<void>((resolve) => { timer = setTimeout(resolve, ms); })]); }
+      finally { if (timer) clearTimeout(timer); }
+    };
+    const signal = (name: "SIGTERM" | "SIGKILL"): void => {
+      if (terminal()) return;
+      try { child.kill(name); } catch { /* 신호 전송은 종료의 증거가 아니다. */ }
+    };
+    if (!terminal()) {
+      signal("SIGTERM");
+      await wait(cleanupTimeoutMs);
+      if (!terminal() && forceKillOnTimeout) {
+        signal("SIGKILL");
+        await wait(1000);
+      }
     }
+    terminal();
     result.cleanup_status = exited ? "exit_observed" : "unknown";
     child.removeListener("exit", onExit);
     if (child.stderr.closed) child.stderr.removeListener("error", onStderrError);

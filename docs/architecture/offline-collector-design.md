@@ -41,7 +41,17 @@
 
 ## full turn 페이지 수집 경로
 
-`collectCodexTurnPagesV0166`는 이미 초기화된 읽기 클라이언트에 사용자가 지정한 스레드의 메타데이터를 요청한 뒤 `listTurns`를 호출한다. `CodexReadTransport.listTurns`는 `thread/turns/list`에 `itemsView: full`, `sortDirection: asc`, `limit: 100`을 명시한다. 기존 item 수집 API는 변경하지 않으며 자동 fallback하지 않는다. `collectFromChildV0166`도 기존 item 경로를 유지한다. `collectTurnsFromChildV0166`는 호출자가 이미 생성한 자식과 파이프의 소유권을 받아 turn 경로를 초기화·수집하고 종료를 시도한다. 종료 관측은 직접 자식에 한정하며 이 경로의 실제 서버 연동은 확인 필요다. 서버 생성과 버전 선택은 호출자가 담당한다.
+`collectCodexTurnPagesV0166`는 이미 초기화된 읽기 클라이언트에 사용자가 지정한 스레드의 메타데이터를 요청한 뒤 `listTurns`를 호출한다. `CodexReadTransport.listTurns`는 `thread/turns/list`에 `itemsView: full`, `sortDirection: asc`, `limit: 100`을 명시한다. 기존 item 수집 API는 변경하지 않으며 자동 fallback하지 않는다. `collectFromChildV0166`도 기존 item 경로를 유지한다. `collectTurnsFromChildV0166`는 호출자가 이미 생성한 자식과 파이프의 소유권을 받아 turn 경로를 초기화·수집하고 종료를 시도한다. 종료 관측은 직접 자식에 한정한다. Linux 0.166.0 합성 기록의 수집·취소와 직접 자식 종료를 확인했지만 실제 개인 기록·Windows·WSL은 미확인이다. 서버 생성과 버전 선택은 호출자가 담당한다.
+
+## 직접 자식 종료 정책
+
+[Issue #96](https://github.com/vni911/Agent-Slity/issues/96)의 공유 정리 정책은 두 자식 수집 함수 모두에 적용한다. `cleanupTimeoutMs`는 기본 10,000ms, 범위 1~30,000ms의 안전한 정수이며 `forceKillOnTimeout`은 기본 false다. 기존의 1초 대기가 늘어 정상·취소·오류 시 호출 반환 지연에 영향을 준다. 수집 취소는 정리를 취소하지 않는다. 수집 상태·사유·이전 페이지와 정리 결과를 별개로 보존한다.
+
+스트림을 닫은 후 아직 살아 있는 직접 자식에 SIGTERM을 시도하고 설정한 기한 동안 exit를 관측한다. 기한이 지난 뒤에도 명시적 `forceKillOnTimeout: true`에서만 SIGKILL을 시도하고 추가 최대 1000ms 관측한다. 신호 전송 결과나 `child.killed`로 성공 판정하지 않는다. 직접 자식의 exit만 `exit_observed`, 나머지는 `unknown`이다. spawn 실패의 음수 exitCode는 실제 자식의 종료로 해석하지 않는다. 이미 종료됐거나 spawn에 실패했거나 close만 관측한 자식은 불필요한 신호·대기를 생략한다.
+
+잘못된 종료 옵션은 요청 전 `invalid_input`으로 처리하지만 소유권을 받은 자식의 정리는 수행한다. 일부 유효 옵션만 채택하지 않고 10초·강제 종료 false 전체 기본 정책으로 정리한다. 타이머와 대기용 exit 리스너는 반환 시 해제하되 늦은 오류를 받는 최소 guard는 실제 close까지 유지한다. 정리 대기 예산은 최대 30초+1초이며 이벤트 루프 지연까지 포함한 엄격한 실제 시간 상한은 아니다. PID 탐색·후손 및 프로세스 그룹 종료·권한 상승은 제공하지 않는다. Windows의 SIGTERM에는 Linux와 같은 정상 종료 의미를 부여하지 않는다.
+
+`tests/fixtures/isolated-child-cleanup-probe.mjs`로 네트워크 없는 비관리자·읽기 전용 루트·tmpfs 컨테이너에서 실제 Codex 0.166.0을 직접 자식으로 검증했다. 기본 정책의 정상 수집과 두 번째 요청 write 반환 직후 취소에서 반환 시 exit_observed를 확인했다. 100ms 정책은 unknown으로 반환했으며 이후 별도 close를 관측했다. 이는 서버 내부에서 두 번째 요청을 처리한 시점의 취소를 증명하지 않는다. Linux 합성 서버의 SIGTERM 무시 시험은 강제 종료 옵션의 허용·미허용을 구분한다. 전체 트리 정리와 다른 실제 환경은 미확인이다.
 
 turn 페이지는 item 페이지와 별도 형식이다. `normalizeCodexTurnsPageV0166`는 full이 아닌 view나 손상된 item 배열을 미지원 페이지로 남긴다. turn의 중복과 순서 및 turn 안 item 인덱스를 보존한다. 반환된 ID는 저장 JSONL ID와 동일하다고 가정하지 않는다. userMessage·agentMessage는 유형·ID·제공된 item 시각만 남기고 본문은 제외한다. 기존 협업·명령·파일 변경 정규화는 페이지 전체에 합산 예산을 공유해 재사용하며 알 수 없는 유형은 위치를 남긴다.
 
