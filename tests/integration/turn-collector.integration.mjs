@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import test from "node:test";
-import { CodexReadTransport, collectCodexTurnPagesV0166, collectTurnsFromChildV0166 } from "../../dist/index.js";
+import { CodexReadTransport, collectCodexTurnPagesV0166, collectTurnsFromChildV0166, collectFromChildV0166 } from "../../dist/index.js";
 
 for (const scenario of ["complete", "error"]) {
   test(`합성 turn 서버의 분할 응답과 ${scenario === "complete" ? "마지막 페이지" : "후속 페이지 오류"}를 처리한다`, { timeout: 15000 }, async () => {
@@ -34,6 +34,36 @@ for (const scenario of ["complete", "error"]) {
 const server = resolve("tests/fixtures/synthetic-turn-server.mjs");
 const env = process.platform === "win32" && process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {};
 const start = scenario => spawn(process.execPath, [server, scenario], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true, env });
+
+test("이미 close된 실제 spawn 실패 객체를 두 자식 API가 종료 관측으로 오판하지 않는다", { timeout: 15000 }, async () => {
+  for (const collect of [collectFromChildV0166, collectTurnsFromChildV0166]) {
+    const child = spawn(resolve("tests/fixtures/PRIVATE_MISSING_BINARY"), [], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true, env });
+    child.once("error", () => {});
+    await new Promise(resolveClose => child.once("close", resolveClose));
+    const result = await collect(child, "child", "synthetic", { cleanupTimeoutMs: 1, forceKillOnTimeout: true });
+    assert.equal(result.initialization_error, "transport_error");
+    assert.equal(result.cleanup_status, "unknown");
+    assert.equal(child.listenerCount("error"), 0);
+    assert.equal(child.listenerCount("close"), 0);
+  }
+});
+
+for (const forceKillOnTimeout of [false, true]) {
+  test(`SIGTERM 무시 자식의 명시적 강제 종료 ${forceKillOnTimeout ? "허용" : "미허용"}을 구분한다`,
+    { timeout: 15000, skip: process.platform === "win32" }, async () => {
+      const child = start("ignore_term");
+      const closed = new Promise((resolveClose, reject) => { child.once("error", reject); child.once("close", resolveClose); });
+      try {
+        const result = await collectTurnsFromChildV0166(child, "child", "synthetic", { cleanupTimeoutMs: 100, forceKillOnTimeout });
+        assert.equal(result.collection.status, "last_page");
+        assert.equal(result.cleanup_status, forceKillOnTimeout ? "exit_observed" : "unknown");
+        assert.equal(child.signalCode, forceKillOnTimeout ? "SIGKILL" : null);
+      } finally {
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+        await closed;
+      }
+    });
+}
 
 test("turn 자식 수집은 정상과 후속 오류에서 결과를 보존하고 직접 자식을 정리한다", { timeout: 15000 }, async () => {
   for (const scenario of ["complete", "error"]) {
