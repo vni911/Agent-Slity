@@ -94,6 +94,10 @@ node dist/cli/main.js --thread-read-jsonl tests/fixtures/thread-read-demo.jsonl 
 
 `exportNormalizationJson(results)`는 정규화 결과 배열을 형식 버전이 포함된 JSON 문자열로 반환합니다. 이벤트·진단·미지원 결과의 순서와 중복을 보존하며 파일을 쓰지 않습니다. 결과 전체를 메모리에 담으므로 큰 기록에는 주의하세요. 출력에 스레드 ID와 출처 별칭이 포함될 수 있어 공유 전에 민감정보를 확인해야 합니다.
 
+`exportChildTurnCollectionJson(result)`는 `collectTurnsFromChildV0166`의 결과를 별도 형식 `agent-slity.child-turn-collection`, version 1, schema_reference `0.166.0`의 JSON 문자열로 반환합니다. `result`에 초기화 오류·수집 상태와 중단 사유·turn 페이지·`cleanup_status`를 보존하며 `unknown`을 성공으로 바꾸지 않습니다. 메시지 본문·명령·경로·커서·stderr·임의 추가 속성은 복사하지 않고 입력 getter·iterator·toJSON도 호출하지 않습니다. 식별자와 보고된 모델·추론 설정은 보존하므로 비밀정보 자동 제거를 보장하지 않습니다. 출력은 항상 `unverified`이며 형식 검증이나 `last_page`가 실제 실행의 진위·전체 기록 복원을 증명하지 않습니다.
+
+최대 20페이지, 페이지당 turn 10,000개·합산 item 10,000개 및 수신자·파일 변경 각 10,000개를 허용합니다. thread 식별자는 최대 65,536, turn/item 및 설정 문자열은 최대 256 UTF-16 코드 단위입니다. JSON 문자열이 UTF-8 16MiB를 넘거나 필수 값·인덱스·형식이 잘못되면 잘라내지 않고 원문 없는 `TypeError`로 실패합니다. 이전 결과의 누락된 `parent_thread_id_status`는 `unknown`으로 내보냅니다. 전체 결과와 문자열을 메모리에 만들기 때문에 이 제한은 메모리 사용량의 엄격한 상한이 아닙니다. 이 함수는 파일 저장·다시 읽기·서버 실행을 하지 않으며 기존 CLI `--output`도 이 새 형식과 연결되지 않습니다.
+
 `findSourceOverlaps(results)`는 같은 출처 별칭과 줄 번호가 반복된 후보를 0부터 시작하는 입력 인덱스로 표시합니다. `matching_normalized`는 정규화 결과만 같다는 뜻이며, 원본이나 실제 이벤트의 동일성을 보장하지 않습니다. 결과가 다른 그룹은 `conflict`로 표시하고 어떤 입력도 삭제하지 않습니다. 별칭이 없으면 비교하지 않으며, 출처별 별칭을 관리할 책임은 호출자에게 있습니다. 전체 결과를 메모리에 복사하므로 큰 입력에 주의하세요.
 
 ## 측정하려는 내용
