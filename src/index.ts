@@ -22,6 +22,7 @@ export type { ChildThreadCollectionResult } from "./core/child-thread-collection
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { exportChildTurnCollectionJson } from "./core/child-turn-json-export.js";
+export { parseChildTurnCollectionJson } from "./core/child-turn-json-parse.js";
 export { findSourceOverlaps } from "./core/source-overlap.js";
 export type { SourceOverlap } from "./core/source-overlap.js";
 export { groupItemObservations } from "./core/item-observations.js";

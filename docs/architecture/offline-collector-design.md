@@ -66,3 +66,13 @@ turn 페이지는 item 페이지와 별도 형식이다. `normalizeCodexTurnsPag
 페이지별 turn과 합산 item은 각각 10,000개로 제한한다. 협업 수신자와 파일 변경 중첩 예산도 각각 페이지당 10,000개이며 초과한 관측은 기존 정규화기처럼 null이다. 기본 10페이지·최대 20페이지이며 취소·서버 오류·전송 오류·반복 커서 등은 이전 페이지를 보존해 partial로 반환한다. summary·누락 view를 full 결과로 해석하지 않는다. 원문·커서·경로·stderr는 결과에 포함하지 않고 unverified를 유지한다. 제한 내에서도 전체 메모리의 엄격한 상한을 증명하지 않는다.
 
 `tests/fixtures/isolated-turn-probe.mjs`는 개인 홈을 마운트하지 않은 비관리자·네트워크 없음·읽기 전용 루트·tmpfs 컨테이너에서 수동 실행하는 합성 검증이다. 실제 0.166.0에서 101개 turn과 202개 메시지를 100/1 turn 페이지로 수집하고 원본 JSONL 보존과 원문 제외를 확인했다. 다른 item 유형과 실제 사용자 기록의 완전 복원은 검증하지 않았다.
+
+## 자식 turn JSON 다시 읽기
+
+[Issue #100](https://github.com/vni911/Agent-Slity/issues/100)의 `parseChildTurnCollectionJson(json)`은 내보내기 version 1 문자열을 검증하고 `ChildTurnCollectionResult`를 반환한다. 파일 경로·바이트 입력·스트림 대신 primitive 문자열만 받으며 UTF-8 바이트 수 16MiB 초과를 JSON.parse 전에 거부한다. format, version, schema_reference, verification_status를 필수 검사하고 내보내기와 공유하는 내부 검증기로 허용 필드를 새 객체와 배열에 복사한다. exporter의 기존 허용 값·예산·오류 문구는 유지한다.
+
+추가 원문·알 수 없는 키·프로토타입 관련 추가 속성은 버린다. 필수 값·인덱스·schema·검증 표시·페이지/중첩 예산의 손상은 원문 없는 고정 `TypeError("유효하지 않은 turn 수집 JSON입니다.")`다. 초기화 실패·부분 수집 사유·정리 unknown·null·실제 0·순서·중복·미지원 관측을 유지하고 누락된 parent_thread_id_status는 unknown으로 보완한다. last_page 및 initialization_error/collection의 기존 조합 검사를 공유하지만 이 값이 실제 서버에서 관측됐는지 인증하지 않는다.
+
+16MiB는 입력 문자열의 UTF-8 크기 상한이며 출력 상한과는 별도로 적용한다. JSON.parse와 복사 객체가 메모리에 함께 존재하므로 전체 메모리 상한은 아니다. 문자열 API이므로 바이너리 UTF-8 검증은 하지 않으며 중복 JSON 키는 마지막 값, 숫자는 JavaScript 파싱 값 기준이다. 원래 키 중복·숫자 정밀성·표현은 복원하지 않는다. ID·보고된 설정의 민감성, unverified와 완전 복원 미보증도 유지한다.
+
+이번 단계는 합성 문자열 및 별도 합성 자식의 수집→export→parse 왕복으로 검증한다. 실제 Codex 재실행·개인 기록 조회·파일 읽기/저장·CLI 연결·자동 탐색·모델 호출은 추가하지 않는다. 이전 #91의 한정된 실제 서버 검증을 이번 파서의 추가 실환경 증거로 바꾸지 않는다.

@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import test from "node:test";
-import { collectTurnsFromChildV0166, exportChildTurnCollectionJson } from "../../dist/index.js";
+import { collectTurnsFromChildV0166, exportChildTurnCollectionJson, parseChildTurnCollectionJson } from "../../dist/index.js";
 
 for (const scenario of ["complete", "error", "hang"]) {
-  test(`별도 합성 자식의 ${scenario} 수집·정리 상태를 JSON으로 내보낸다`, { timeout: 15000 }, async () => {
+  test(`별도 합성 자식의 ${scenario} 수집·정리 상태를 JSON으로 내보내고 다시 읽는다`, { timeout: 15000 }, async () => {
     const child = spawn(process.execPath, [resolve("tests/fixtures/synthetic-turn-server.mjs"), scenario], {
       stdio: ["pipe", "pipe", "pipe"], windowsHide: true,
       env: process.platform === "win32" && process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {},
@@ -21,6 +21,8 @@ for (const scenario of ["complete", "error", "hang"]) {
       const result = await collectTurnsFromChildV0166(child, "child", "synthetic", { signal: controller.signal });
       const json = exportChildTurnCollectionJson(result), parsed = JSON.parse(json);
       assert.deepEqual(parsed.result, result);
+      assert.deepEqual(parseChildTurnCollectionJson(json), result);
+      assert.equal(exportChildTurnCollectionJson(parseChildTurnCollectionJson(json)), json);
       assert.equal(parsed.format, "agent-slity.child-turn-collection");
       assert.equal(parsed.verification_status, "unverified");
       assert.equal(parsed.result.cleanup_status, "exit_observed");
