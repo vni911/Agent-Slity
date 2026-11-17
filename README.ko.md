@@ -102,6 +102,12 @@ node dist/cli/main.js --thread-read-jsonl tests/fixtures/thread-read-demo.jsonl 
 
 JavaScript의 JSON.parse 값 기준이므로 중복 JSON 키는 마지막 값으로 처리하고 숫자의 원본 정밀성·표현을 보존하지 않습니다. 바이너리 UTF-8 검증이나 출처 인증·민감정보 자동 탐지를 제공하지 않으며 ID·보고된 설정값은 보존합니다. 입력과 파싱·복사 결과가 메모리에 존재하므로 16MiB는 엄격한 전체 메모리 상한이 아닙니다. 파일 읽기·저장·CLI 연결·서버 실행은 하지 않습니다.
 
+`summarizeChildTurnCollection(result)`는 메모리의 자식 turn 수집 결과를 읽기 전용으로 집계합니다. `agent-slity.child-turn-summary`, version 1, schema_reference `0.166.0`, `unverified`와 초기화 오류·`cleanup_status`를 반환하고, collection이 있으면 수집 상태·중단 사유·`thread_kind`를 보존합니다. `pages.received`는 입력 pages 배열 길이이며 지원·미지원 페이지 수를 따로 표시합니다. 요청 횟수나 모든 서버 응답 수가 아닙니다.
+
+`count_scope: supported_pages`의 `observations`에는 turn·item 관측 수와 turn 상태별·item 유형별 수가 담깁니다. 중복 페이지·ID·항목도 입력 횟수대로 세며, turn 상태가 `null`이면 `unknown`, 미지원 item 위치는 `unsupported` 분류에 셉니다. 지원 페이지가 없으면 `observations: null`, 유효한 빈 페이지가 있으면 실제 `0`입니다. 미지원 페이지 내부는 알 수 없어 합산하지 않습니다. 초기화 실패로 collection이 없으면 요약의 collection도 `null`입니다.
+
+요약은 공유 구조 검증기를 사용하고 입력을 수정하거나 getter·iterator·toJSON을 호출하지 않습니다. 손상된 입력은 원문 없는 고정 `TypeError("유효하지 않은 turn 수집 요약 입력입니다.")`로 거부합니다. ID·별칭·보고된 설정·시각·원문은 요약에 복사하지 않으며 고유 실행·에이전트 수, 사용량, 실행 시간·작업 품질이나 전체 기록 복원을 추정하지 않습니다. 객체 검증의 기존 페이지·중첩 예산을 적용하며 JSON 문자열의 16MiB 한도와는 별개입니다. 복사 검증은 엄격한 전체 메모리 상한을 보증하지 않고 파일·CLI·서버 연결도 하지 않습니다.
+
 `findSourceOverlaps(results)`는 같은 출처 별칭과 줄 번호가 반복된 후보를 0부터 시작하는 입력 인덱스로 표시합니다. `matching_normalized`는 정규화 결과만 같다는 뜻이며, 원본이나 실제 이벤트의 동일성을 보장하지 않습니다. 결과가 다른 그룹은 `conflict`로 표시하고 어떤 입력도 삭제하지 않습니다. 별칭이 없으면 비교하지 않으며, 출처별 별칭을 관리할 책임은 호출자에게 있습니다. 전체 결과를 메모리에 복사하므로 큰 입력에 주의하세요.
 
 ## 측정하려는 내용

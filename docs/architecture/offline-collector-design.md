@@ -76,3 +76,15 @@ turn 페이지는 item 페이지와 별도 형식이다. `normalizeCodexTurnsPag
 16MiB는 입력 문자열의 UTF-8 크기 상한이며 출력 상한과는 별도로 적용한다. JSON.parse와 복사 객체가 메모리에 함께 존재하므로 전체 메모리 상한은 아니다. 문자열 API이므로 바이너리 UTF-8 검증은 하지 않으며 중복 JSON 키는 마지막 값, 숫자는 JavaScript 파싱 값 기준이다. 원래 키 중복·숫자 정밀성·표현은 복원하지 않는다. ID·보고된 설정의 민감성, unverified와 완전 복원 미보증도 유지한다.
 
 이번 단계는 합성 문자열 및 별도 합성 자식의 수집→export→parse 왕복으로 검증한다. 실제 Codex 재실행·개인 기록 조회·파일 읽기/저장·CLI 연결·자동 탐색·모델 호출은 추가하지 않는다. 이전 #91의 한정된 실제 서버 검증을 이번 파서의 추가 실환경 증거로 바꾸지 않는다.
+
+## 자식 turn 관측 요약
+
+[Issue #102](https://github.com/vni911/Agent-Slity/issues/102)의 `summarizeChildTurnCollection(input)`은 `ChildTurnCollectionResult`를 `ChildTurnCollectionSummary`로 집계하는 순수 함수다. `ChildTurnObservationCounts`도 공개 타입이다. 요약 루트는 format agent-slity.child-turn-summary, version 1, schema_reference 0.166.0, verification_status unverified이며 initialization_error와 cleanup_status를 그대로 유지한다. collection이 null이면 요약 collection도 null이다.
+
+collection은 status/reason, thread_kind(thread/unsupported/unknown), pages(received/supported/unsupported), count_scope supported_pages, observations를 포함한다. received는 입력 pages 배열 길이로 모든 서버 응답이나 요청 횟수가 아니다. 지원 page가 하나도 없으면 observations는 null, 하나 이상이면 turns/items와 turn_statuses/item_kinds별 관측 수를 담는다. 유효한 빈 page는 0이다. turn 상태 null은 unknown 분류로 세고 지원 page 안의 미지원 item은 unsupported 위치 수로 센다. 미지원 page 내부의 수는 알 수 없으므로 합산하지 않는다. 지원 빈 page와 미지원 page가 섞이면 지원 범위의 0과 미지원 page 수를 함께 표시한다.
+
+중복 page·turn/item·ID는 입력 횟수대로 보존해 세며 고유 실행·에이전트 수로 해석하지 않는다. 초기화 오류·partial 사유와 cleanup unknown은 성공으로 바꾸지 않는다. last_page나 status completed도 전체 기록의 완전성·작업 품질·실제 실행의 진위를 증명하지 않는다. 시간·사용량·효율·지연을 추정하거나 합산하지 않는다.
+
+기존 내부 검증·복사 경계를 재사용하므로 필수 값·인덱스·상태 조합·20 page 및 페이지별 turn/item/중첩 예산을 동일하게 적용한다. 입력을 수정하거나 입력 getter·iterator·toJSON을 호출하지 않고, 손상은 원문 없는 고정 TypeError(유효하지 않은 turn 수집 요약 입력입니다.)다. 객체 입력의 구조 검증이므로 export/parse JSON 문자열의 16MiB 상한과 별개이며 복사 객체의 전체 메모리 상한을 보증하지 않는다. 요약에는 ID·별칭·보고된 설정·시각·원문을 복사하지 않는다. 파일 읽기/저장·CLI·서버·모델 호출은 제공하지 않는다.
+
+검증은 합성 입력과 합성 자식의 수집→export→parse→summary 연결에 한정한다. null/0·미지원·중복과 상태 보존을 검사하며 실제 개인 기록·다른 환경·전체 복원·멀티에이전트 효율 측정 기능의 완성을 주장하지 않는다. 기존 CLI --summary는 exec JSONL 정규화 결과 전용으로 유지한다.
