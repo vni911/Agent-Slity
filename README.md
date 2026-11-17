@@ -98,6 +98,10 @@ node dist/cli/main.js --thread-read-jsonl tests/fixtures/thread-read-demo.jsonl 
 
 최대 20페이지, 페이지당 turn 10,000개·합산 item 10,000개 및 수신자·파일 변경 각 10,000개를 허용합니다. thread 식별자는 최대 65,536, turn/item 및 설정 문자열은 최대 256 UTF-16 코드 단위입니다. JSON 문자열이 UTF-8 16MiB를 넘거나 필수 값·인덱스·형식이 잘못되면 잘라내지 않고 원문 없는 `TypeError`로 실패합니다. 이전 결과의 누락된 `parent_thread_id_status`는 `unknown`으로 내보냅니다. 전체 결과와 문자열을 메모리에 만들기 때문에 이 제한은 메모리 사용량의 엄격한 상한이 아닙니다. 이 함수는 파일 저장·다시 읽기·서버 실행을 하지 않으며 기존 CLI `--output`도 이 새 형식과 연결되지 않습니다.
 
+자식 turn 수집 JSON은 `parseChildTurnCollectionJson(json)`으로 다시 읽어 `ChildTurnCollectionResult`를 얻을 수 있습니다. 문자열만 받고 JSON.parse 전에 UTF-8 16MiB 입력 상한을 검사합니다. 위 형식·version 1·schema_reference `0.166.0`·`unverified`와 내보내기와 같은 필수 값·페이지 및 중첩 예산을 검증해 허용 필드만 새 객체와 배열로 복사합니다. 초기화 오류·부분 수집 사유·정리 `unknown`·null·실제 0·순서·중복을 유지하며 이전 `parent_thread_id_status` 누락은 `unknown`으로 보완합니다. 추가 원문·알 수 없는 속성은 버리고, 손상된 입력은 원문 없는 고정 `TypeError("유효하지 않은 turn 수집 JSON입니다.")`로 거부합니다.
+
+JavaScript의 JSON.parse 값 기준이므로 중복 JSON 키는 마지막 값으로 처리하고 숫자의 원본 정밀성·표현을 보존하지 않습니다. 바이너리 UTF-8 검증이나 출처 인증·민감정보 자동 탐지를 제공하지 않으며 ID·보고된 설정값은 보존합니다. 입력과 파싱·복사 결과가 메모리에 존재하므로 16MiB는 엄격한 전체 메모리 상한이 아닙니다. 파일 읽기·저장·CLI 연결·서버 실행은 하지 않습니다.
+
 `findSourceOverlaps(results)`는 같은 출처 별칭과 줄 번호가 반복된 후보를 0부터 시작하는 입력 인덱스로 표시합니다. `matching_normalized`는 정규화 결과만 같다는 뜻이며, 원본이나 실제 이벤트의 동일성을 보장하지 않습니다. 결과가 다른 그룹은 `conflict`로 표시하고 어떤 입력도 삭제하지 않습니다. 별칭이 없으면 비교하지 않으며, 출처별 별칭을 관리할 책임은 호출자에게 있습니다. 전체 결과를 메모리에 복사하므로 큰 입력에 주의하세요.
 
 ## 측정하려는 내용
