@@ -179,6 +179,18 @@ node dist/cli/main.js --summary tests/fixtures/demo.jsonl
 
 Counts describe normalized results read after blank lines are skipped and include duplicates. They do not establish unique event counts, missing-record rates, or source authenticity. The command aggregates as it reads and does not print raw content or paths.
 
+Use a separate command for a saved child turn collection JSON document. This synthetic example does not start a real server:
+
+```sh
+node dist/cli/main.js --child-turn-summary tests/fixtures/child-turn-collection-demo.json
+```
+
+It reads one version 1 `agent-slity.child-turn-collection` document produced by `exportChildTurnCollectionJson` and prints one `agent-slity.child-turn-summary` JSON document followed by LF. Pretty-printed JSON is accepted; multiple JSONL documents and exec normalization JSON are rejected. Supported-page turn/item observation counts include duplicates and preserve collection/cleanup states. IDs, aliases, and raw content are not printed. No supported observation scope is `null`; a valid empty page gives actual zero.
+
+Only the explicitly named regular file is read; an explicit symlink to a regular file is followed. The entire original input, including whitespace and line endings, is limited to 16MiB. Invalid UTF-8, BOM, invalid JSON/format, and empty input are rejected. Windows device/extended paths and alternate data streams are not accepted. Argument errors exit 2; file/encoding/format/size errors exit 1 with empty stdout and a fixed error without raw content or the input path. A valid initialization-failure or partial-collection document still exits 0 when summarization succeeds; inspect the output states as well.
+
+The command does not save files, start servers, discover records, or call models. It does not guarantee unchanged file-read metadata or a consistent snapshot during concurrent modification. Input buffers, parsed data, and validation copies coexist, so 16MiB is not a strict total memory bound. Shell redirection must target a different path from the source. Counts do not infer unique runs/agents, quality/efficiency, or complete history.
+
 Compare position-overlap candidates from records you identify as the same source. This example reads the synthetic fixture twice:
 
 ```sh

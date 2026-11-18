@@ -1,0 +1,90 @@
+{
+  "format": "agent-slity.child-turn-collection",
+  "version": 1,
+  "schema_reference": "0.166.0",
+  "verification_status": "unverified",
+  "result": {
+    "initialization_error": null,
+    "cleanup_status": "unknown",
+    "collection": {
+      "verification_status": "unverified",
+      "source_id": "synthetic",
+      "status": "last_page",
+      "reason": "last_page",
+      "thread": {
+        "kind": "thread",
+        "source": {
+          "format": "codex_app_server_thread_read",
+          "schema_reference": "0.166.0",
+          "source_id": "synthetic"
+        },
+        "verification_status": "unverified",
+        "thread_id": "synthetic-thread",
+        "parent_thread_id": null,
+        "session_id": null,
+        "forked_from_id": null,
+        "parent_thread_id_status": "unknown"
+      },
+      "pages": [
+        {
+          "kind": "page",
+          "source_id": "synthetic",
+          "schema_reference": "0.166.0",
+          "verification_status": "unverified",
+          "next_page": "available",
+          "turns": [
+            {
+              "index": 0,
+              "turn_id": "synthetic-turn",
+              "status": "completed",
+              "items_view": "full",
+              "items": [
+                {
+                  "index": 0,
+                  "kind": "user_message",
+                  "turn_id": "synthetic-turn",
+                  "item_id": "synthetic-item",
+                  "started_at_ms": null,
+                  "completed_at_ms": null
+                },
+                {
+                  "index": 1,
+                  "kind": "unsupported"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "source_id": "synthetic",
+          "schema_reference": "0.166.0",
+          "verification_status": "unverified",
+          "next_page": "none",
+          "turns": [
+            {
+              "index": 0,
+              "turn_id": "synthetic-turn",
+              "status": "completed",
+              "items_view": "full",
+              "items": [
+                {
+                  "index": 0,
+                  "kind": "user_message",
+                  "turn_id": "synthetic-turn",
+                  "item_id": "synthetic-item",
+                  "started_at_ms": null,
+                  "completed_at_ms": null
+                },
+                {
+                  "index": 1,
+                  "kind": "unsupported"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
