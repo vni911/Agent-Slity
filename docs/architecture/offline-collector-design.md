@@ -88,3 +88,13 @@ collection은 status/reason, thread_kind(thread/unsupported/unknown), pages(rece
 기존 내부 검증·복사 경계를 재사용하므로 필수 값·인덱스·상태 조합·20 page 및 페이지별 turn/item/중첩 예산을 동일하게 적용한다. 입력을 수정하거나 입력 getter·iterator·toJSON을 호출하지 않고, 손상은 원문 없는 고정 TypeError(유효하지 않은 turn 수집 요약 입력입니다.)다. 객체 입력의 구조 검증이므로 export/parse JSON 문자열의 16MiB 상한과 별개이며 복사 객체의 전체 메모리 상한을 보증하지 않는다. 요약에는 ID·별칭·보고된 설정·시각·원문을 복사하지 않는다. 파일 읽기/저장·CLI·서버·모델 호출은 제공하지 않는다.
 
 검증은 합성 입력과 합성 자식의 수집→export→parse→summary 연결에 한정한다. null/0·미지원·중복과 상태 보존을 검사하며 실제 개인 기록·다른 환경·전체 복원·멀티에이전트 효율 측정 기능의 완성을 주장하지 않는다. 기존 CLI --summary는 exec JSONL 정규화 결과 전용으로 유지한다.
+
+## 저장된 자식 turn JSON의 CLI 요약
+
+[Issue #104](https://github.com/vni911/Agent-Slity/issues/104)의 `--child-turn-summary <JSON 파일>`은 별도 개발용 CLI 경로다. 호출자가 지정한 파일 하나를 내부 `src/cli/child-turn-summary.ts`에서 읽고 기존 parseChildTurnCollectionJson→summarizeChildTurnCollection 결과만 JSON 한 문서+LF로 출력한다. 공개 라이브러리 API와 기존 exec JSONL --summary/--output 의미는 유지한다. 여러 줄 JSON은 허용하지만 JSONL 여러 문서·빈 입력·다른 형식은 실패한다.
+
+열기 전 stat과 열린 descriptor의 stat으로 일반 파일·크기16MiB를 확인한다. 읽기 전용 O_RDONLY와 가능한 O_NONBLOCK을 사용하고 finally에서 close를 기다린다. 64KiB 청크의 실제 합계를 제한하며 최대16MiB+1바이트만 읽어 파일 성장에 따른 초과를 거부한다. 원본 바이트 수에 공백·줄바꿈도 포함한다. fatal UTF-8 디코딩을 사용하고 ignoreBOM:true로 BOM을 남겨 기존 파서가 거부하도록 한다. 끝까지 읽기·파싱·요약·close가 성공하기 전에는 stdout을 반환하지 않는다.
+
+인수 오류는2, 파일·UTF-8·형식·크기·정리 실패는1과 빈 stdout/원문 없는 고정 stderr다. 유효한 초기화 실패/partial 결과의 요약은 종료 코드0이며, 이는 수집이나 자식 정리의 성공을 뜻하지 않는다. 원래 수집 상태·cleanup unknown 및 관측 null/0·중복은 그대로 출력한다. Windows 장치·확장 경로·ADS는 새 옵션의 인수 단계에서 거부한다. 명시한 symlink가 일반 파일을 가리키면 읽으며 자동 탐색은 하지 않는다.
+
+파일 내용 쓰기·서버/모델 실행·자동 인증·파일 저장은 제공하지 않는다. 읽기에 따른 OS 메타데이터 변화까지 무부작용으로 주장하지 않는다. symlink/대상 교체와 동시 변경의 모든 경합이나 일관된 스냅샷을 보증하지 않고, 입력 버퍼·문자열·파싱/검증 복사의 전체 메모리 상한도 보증하지 않는다. 셸이 리디렉션 대상으로 연 파일은 CLI가 보호할 수 없으므로 원본과 다른 경로를 써야 한다. 합성 파일/모의 파일 동작만 검증하며 실제 Codex 기록의 호환성·완전 복원과 효율 측정은 별도다.

@@ -12,6 +12,7 @@ import { groupThreadObservations } from "../core/thread-observations.js";
 import { findParentThreadCandidates } from "../core/parent-thread-candidates.js";
 import { findThreadEvidenceCandidates } from "../core/thread-evidence-candidates.js";
 import type { NormalizationResult } from "../core/events.js";
+import { readChildTurnSummary } from "./child-turn-summary.js";
 
 export interface CliResult {
   exitCode: number;
@@ -21,8 +22,8 @@ export interface CliResult {
 
 const EVIDENCE_MAX_FILE_BYTES = 16 * 1024 * 1024;
 
-/** Windows의 대체 데이터 스트림과 장치 경로는 일반 새 파일로 취급하지 않는다. */
-function unsafeWindowsOutput(path: string): boolean {
+/** Windows의 대체 데이터 스트림과 장치 경로는 일반 파일로 취급하지 않는다. */
+function unsafeWindowsFilePath(path: string): boolean {
   if (process.platform !== "win32") return false;
   if (/^(?:\\\\|\/\/)[?.](?:\\|\/)/.test(path)) return true;
   const withoutDrive = /^[A-Za-z]:/.test(path) ? path.slice(2) : path;
@@ -30,6 +31,15 @@ function unsafeWindowsOutput(path: string): boolean {
   return withoutDrive.split(/[\\/]/).some((part) =>
     /^(?:CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])(?:\..*)?$/i.test(part.replace(/[ .]+$/, "")),
   );
+}
+
+/** 새 요약 입력에만 콘솔 장치명도 추가 거부한다. 기존 출력 정책은 유지한다. */
+function unsafeWindowsSummaryInput(path: string): boolean {
+  if (unsafeWindowsFilePath(path)) return true;
+  if (process.platform !== "win32") return false;
+  const withoutDrive = /^[A-Za-z]:/.test(path) ? path.slice(2) : path;
+  return withoutDrive.split(/[\\/]/).some((part) =>
+    /^(?:CONIN\$|CONOUT\$)$/i.test(part.replace(/[ .]+$/, "")));
 }
 
 /** 지정된 입력만 읽는다. 명시적인 출력 옵션에서만 새 파일을 만든다. */
@@ -41,6 +51,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "사용법: node dist/cli/main.js <JSONL 파일> [출처_별칭]",
         "새 파일 저장: node dist/cli/main.js --output <JSONL 파일> <새 JSON 파일> [출처_별칭]",
         "입력 요약: node dist/cli/main.js --summary <JSONL 파일>",
+        "자식 turn 수집 요약: node dist/cli/main.js --child-turn-summary <JSON 파일>",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
@@ -59,10 +70,23 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "스레드와 항목 후보의 별칭은 동일 출처를 인증하지 않습니다.",
         "스레드와 항목 후보 입력은 파일마다 최대 16 MiB입니다.",
         "입력 요약은 중복을 포함한 정규화 결과 수이며 실제 고유 이벤트 수가 아닙니다.",
+        "자식 turn 수집 요약은 version 1 JSON 문서 하나를 읽습니다. UTF-8, BOM 없음, 파일 전체 최대 16 MiB.",
+        "지원 page의 관측 횟수만 집계하며 null/0·미지원·중복과 수집/정리 상태를 보존합니다.",
         "",
       ].join("\n"),
       stderr: "",
     };
+  }
+  if (args[0] === "--child-turn-summary") {
+    if (args.length !== 2 || !args[1] || args[1].startsWith("-") || unsafeWindowsSummaryInput(args[1])) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --child-turn-summary <JSON 파일>\n" };
+    }
+    try {
+      const summary = await readChildTurnSummary(args[1]);
+      return { exitCode: 0, stdout: `${JSON.stringify(summary)}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "수집 JSON을 요약할 수 없습니다. 파일·UTF-8·형식·크기를 확인하세요.\n" };
+    }
   }
   if (args[0] === "--thread-evidence-jsonl") {
     if (args.length !== 4 || !args[1] || !args[2] || args[1].startsWith("-") || args[2].startsWith("-") || !args[3] ||
@@ -211,7 +235,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
     const output = args[2];
     const alias = args[3];
     if ((args.length !== 3 && args.length !== 4) || !input || !output ||
-        input.startsWith("-") || output.startsWith("-") || unsafeWindowsOutput(output) ||
+        input.startsWith("-") || output.startsWith("-") || unsafeWindowsFilePath(output) ||
         args.includes("--help") || args.includes("-h")) {
       return { exitCode: 2, stdout: "", stderr: "사용법: --output <JSONL 파일> <새 JSON 파일> [출처_별칭]\n" };
     }
