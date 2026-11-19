@@ -191,6 +191,18 @@ node dist/cli/main.js --child-turn-summary tests/fixtures/child-turn-collection-
 
 파일 저장·서버 실행·자동 탐색·모델 호출은 하지 않습니다. 파일의 읽기 메타데이터 변화나 동시 변경 중 일관된 스냅샷을 보증하지 않으며, 입력·버퍼·파싱/검증 복사 결과가 메모리에 공존하므로16MiB는 엄격한 전체 메모리 상한이 아닙니다. 셸 리디렉션은 원본과 다른 경로로 지정하세요. 고유 실행/에이전트 수·품질/효율·전체 복원은 추정하지 않습니다.
 
+여러 수집 JSON을 파일별로 한 번에 요약하려면 복수형 옵션을 사용합니다. 아래 합성 예제처럼 같은 파일을 반복 지정해도 입력 순서와 횟수를 보존합니다.
+
+```sh
+node dist/cli/main.js --child-turn-summaries tests/fixtures/child-turn-collection-demo.json tests/fixtures/child-turn-collection-demo.json
+```
+
+입력은 1~8개이며 파일당 원본16MiB·전체 실제 읽기64MiB 한도(공백·줄바꿈 포함)를 적용합니다. 반복 경로도 다시 읽어 전체 예산에 다시 셉니다. 파일을 순차적으로 읽고 정리하며 한 파일이라도 읽기·인코딩·형식·한도·정리에 실패하면 앞 결과도 출력하지 않습니다. 인수 오류는 파일 접근 전 종료2, 처리 오류는 빈 stdout과 원문·경로 없는 고정 stderr 및 종료1입니다.
+
+출력은 `agent-slity.child-turn-summaries`, version 1, schema_reference `0.166.0`, `unverified`, `count_semantics: per_input_including_duplicates`와 `inputs` 배열입니다. 각 항목은 0기반 `input_index`와 기존 개별 `summary`를 담습니다. 배치 메타데이터에 경로·ID·별칭을 추가하지 않으며 파일별 초기화 오류·부분 수집·정리 `unknown`·관측 `null`/실제 `0`을 보존합니다. 유효한 수집 오류 결과의 요약도 CLI 성공0이므로 각 상태를 확인하세요. 파일 간 합산·고유 실행 판정·중복 제거·순위나 효율 평가를 하지 않습니다.
+
+단일 옵션의 일반 파일·symlink·UTF-8/BOM·Windows 경로·읽기 전용 정책을 공유합니다. 전체64MiB도 엄격한 전체 메모리 상한이 아니며 여러 파일이나 반복 경로의 동시 변경에 대한 일관된 스냅샷을 보증하지 않습니다. 서버·모델 호출이나 파일 저장은 추가하지 않습니다.
+
 동일 출처라고 사용자가 지정한 두 기록의 위치 중복 후보를 확인할 수 있습니다. 다음 명령은 같은 합성 예제를 두 번 읽습니다.
 
 ```sh

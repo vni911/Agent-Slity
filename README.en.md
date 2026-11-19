@@ -191,6 +191,18 @@ Only the explicitly named regular file is read; an explicit symlink to a regular
 
 The command does not save files, start servers, discover records, or call models. It does not guarantee unchanged file-read metadata or a consistent snapshot during concurrent modification. Input buffers, parsed data, and validation copies coexist, so 16MiB is not a strict total memory bound. Shell redirection must target a different path from the source. Counts do not infer unique runs/agents, quality/efficiency, or complete history.
 
+Use the plural option to summarize several collection JSON files independently. Repeating the same synthetic file preserves argument order and duplicate occurrences:
+
+```sh
+node dist/cli/main.js --child-turn-summaries tests/fixtures/child-turn-collection-demo.json tests/fixtures/child-turn-collection-demo.json
+```
+
+Accepts 1–8 inputs, with 16MiB of original bytes per file and 64MiB of actual bytes read in total, including whitespace and line endings. Repeated paths are read and charged again. Files are read and closed sequentially. Any read, encoding, format, budget, or close failure suppresses all output, including earlier summaries. Argument errors exit 2 before file access; processing errors exit 1 with empty stdout and a fixed stderr message without raw content or paths.
+
+Output contains `agent-slity.child-turn-summaries`, version 1, schema_reference `0.166.0`, `unverified`, `count_semantics: per_input_including_duplicates`, and an `inputs` array. Each entry has a zero-based `input_index` and its existing individual `summary`. Batch metadata adds no paths, IDs, or aliases. Per-file initialization errors, partial reasons, cleanup `unknown`, and observation `null`/actual zero are preserved. A valid document containing a collection error still exits 0 if summarization succeeds; inspect each summary's states. The command does not aggregate files, identify unique runs, deduplicate, rank results, or evaluate efficiency.
+
+It shares the single-file option's regular-file, symlink, UTF-8/BOM, Windows path, and read-only policies. The total 64MiB limit is not a strict total memory bound, and no consistent snapshot across files or repeated paths during concurrent changes is guaranteed. No server/model calls or file saving are added.
+
 Compare position-overlap candidates from records you identify as the same source. This example reads the synthetic fixture twice:
 
 ```sh
