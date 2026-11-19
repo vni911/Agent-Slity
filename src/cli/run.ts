@@ -12,7 +12,7 @@ import { groupThreadObservations } from "../core/thread-observations.js";
 import { findParentThreadCandidates } from "../core/parent-thread-candidates.js";
 import { findThreadEvidenceCandidates } from "../core/thread-evidence-candidates.js";
 import type { NormalizationResult } from "../core/events.js";
-import { readChildTurnSummary } from "./child-turn-summary.js";
+import { MAX_CHILD_TURN_SUMMARY_INPUTS, readChildTurnSummaries, readChildTurnSummary } from "./child-turn-summary.js";
 
 export interface CliResult {
   exitCode: number;
@@ -52,6 +52,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "새 파일 저장: node dist/cli/main.js --output <JSONL 파일> <새 JSON 파일> [출처_별칭]",
         "입력 요약: node dist/cli/main.js --summary <JSONL 파일>",
         "자식 turn 수집 요약: node dist/cli/main.js --child-turn-summary <JSON 파일>",
+        "여러 자식 turn 수집 요약: node dist/cli/main.js --child-turn-summaries <JSON 파일> [JSON 파일 ...]",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
@@ -72,6 +73,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "입력 요약은 중복을 포함한 정규화 결과 수이며 실제 고유 이벤트 수가 아닙니다.",
         "자식 turn 수집 요약은 version 1 JSON 문서 하나를 읽습니다. UTF-8, BOM 없음, 파일 전체 최대 16 MiB.",
         "지원 page의 관측 횟수만 집계하며 null/0·미지원·중복과 수집/정리 상태를 보존합니다.",
+        "여러 수집 요약은 1~8개, 파일당16MiB·전체64MiB. 순서·중복을 보존하며 하나라도 실패하면 전체 출력하지 않습니다.",
         "",
       ].join("\n"),
       stderr: "",
@@ -86,6 +88,19 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       return { exitCode: 0, stdout: `${JSON.stringify(summary)}\n`, stderr: "" };
     } catch {
       return { exitCode: 1, stdout: "", stderr: "수집 JSON을 요약할 수 없습니다. 파일·UTF-8·형식·크기를 확인하세요.\n" };
+    }
+  }
+  if (args[0] === "--child-turn-summaries") {
+    const paths = args.slice(1);
+    if (paths.length < 1 || paths.length > MAX_CHILD_TURN_SUMMARY_INPUTS ||
+        paths.some(path => !path || path.startsWith("-") || unsafeWindowsSummaryInput(path))) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --child-turn-summaries <JSON 파일> [JSON 파일 ...] (최대8개)\n" };
+    }
+    try {
+      const summaries = await readChildTurnSummaries(paths);
+      return { exitCode: 0, stdout: `${JSON.stringify(summaries)}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "수집 JSON 묶음을 요약할 수 없습니다. 파일·UTF-8·형식·크기·전체 한도를 확인하세요.\n" };
     }
   }
   if (args[0] === "--thread-evidence-jsonl") {

@@ -98,3 +98,13 @@ collection은 status/reason, thread_kind(thread/unsupported/unknown), pages(rece
 인수 오류는2, 파일·UTF-8·형식·크기·정리 실패는1과 빈 stdout/원문 없는 고정 stderr다. 유효한 초기화 실패/partial 결과의 요약은 종료 코드0이며, 이는 수집이나 자식 정리의 성공을 뜻하지 않는다. 원래 수집 상태·cleanup unknown 및 관측 null/0·중복은 그대로 출력한다. Windows 장치·확장 경로·ADS는 새 옵션의 인수 단계에서 거부한다. 명시한 symlink가 일반 파일을 가리키면 읽으며 자동 탐색은 하지 않는다.
 
 파일 내용 쓰기·서버/모델 실행·자동 인증·파일 저장은 제공하지 않는다. 읽기에 따른 OS 메타데이터 변화까지 무부작용으로 주장하지 않는다. symlink/대상 교체와 동시 변경의 모든 경합이나 일관된 스냅샷을 보증하지 않고, 입력 버퍼·문자열·파싱/검증 복사의 전체 메모리 상한도 보증하지 않는다. 셸이 리디렉션 대상으로 연 파일은 CLI가 보호할 수 없으므로 원본과 다른 경로를 써야 한다. 합성 파일/모의 파일 동작만 검증하며 실제 Codex 기록의 호환성·완전 복원과 효율 측정은 별도다.
+
+## 여러 자식 turn JSON의 일괄 요약
+
+[Issue #106](https://github.com/vni911/Agent-Slity/issues/106)의 `--child-turn-summaries <JSON 파일> [JSON 파일 ...]`은 입력1~8개를 순서대로 요약한다. 모든 인수와 Windows 경로를 파일 접근 전에 검사한다. 기존 단일 옵션·exec JSONL --summary/--output과 공개 라이브러리 export는 변경하지 않는다. 파일별 요약만 제공하고 집계·동일 실행 연결·중복 제거·순위·효율 판단은 하지 않는다.
+
+내부 리더의 일반 파일/UTF-8/BOM/close 정책을 공유하며 파일별16MiB와 실제 읽기 총64MiB를 적용한다. 각 파일의 한도는16MiB와 남은 전체 예산 중 작은 값이다. stat 전/후 크기와 실제 읽은 바이트를 검사하고 초과 판별에1바이트만 더 읽는다. 성공한 읽기와 close 후 실제 바이트를 전체 예산에서 차감한다. 같은 경로를 반복해도 매번 다시 읽고 예산에 다시 센다. 순차적으로 읽어 작은 요약만 보관하지만 버퍼·문자열·파싱/검증 복사의 엄격한 전체 메모리 상한은 아니다.
+
+전 입력의 읽기·형식·요약·close가 성공한 후에만 format agent-slity.child-turn-summaries/version1/schema_reference0.166.0/unverified/count_semantics per_input_including_duplicates/inputs JSON 한 문서+LF를 반환한다. inputs 항목은 인수 순서의 input_index와 개별 ChildTurnCollectionSummary이며 경로·ID·별칭을 추가하지 않는다. 초기화 오류/partial/cleanup unknown과 관측 null/0을 유지한다. 유효한 오류 상태 문서의 요약 자체는 성공0이다.
+
+인수 오류는2, 파일·형식·인코딩·개별/전체 한도·close 실패는1이며 실패 시 이전 요약까지 포함한 stdout을 비우고 원문 없는 고정 stderr를 반환한다. 실패 뒤의 파일은 읽지 않는다. 여러 파일·반복 경로 사이의 동시 변경이나 일관된 스냅샷을 보증하지 않는다. 파일 저장·서버·모델 호출은 추가하지 않고 합성 파일·모의 파일로 검증한다.
