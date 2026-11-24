@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.cjs",
   "engines": {
     "node": ">=24 <25"
   },
@@ -11,12 +12,20 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:integration": "node --test tests/integration/*.integration.mjs",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && vite build --config vite.desktop.config.mjs",
+    "desktop": "node scripts/start-desktop.mjs",
+    "desktop:install": "install-electron",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:package": "npm run build && node scripts/package-desktop.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:integration"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "electron": "45.4.1",
     "eslint": "10.14.0",
+    "playwright-core": "1.65.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",

@@ -8,11 +8,68 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ## 현재 상태
 
-**1단계의 제한된 수집·저장 기반을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 설치 가능한 앱, 효율 보고서·팀 추천·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
+**로컬 데스크톱 MVP를 제공합니다.** 하나의 작업 공간에서 저장 기록 보고서, 팀 구성·추천, 합성 팀 실행·취소·비교와 명시 저장을 사용할 수 있습니다. Codex 실행 파일과 작업 폴더를 직접 선택하는 read-only 실행 연결도 제공하며 실제 계정/버전별 호출 검증은 확인 필요입니다. 구현·검증 범위와 한계는 [MVP 작업 공간](docs/architecture/mvp-workbench.md)에 기록합니다.
+
+**제한된 수집·저장 기반, 근거 보고서와 팀 구성 계획을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 팀 계획에서는 명시한 선택과 요청 조건에 따른 규칙 추천을 따로 확인합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교와 계정/버전별 Codex 실험은 별도 검증이 필요하며 고정 합성 실행과 로컬 데스크톱 흐름을 먼저 제공합니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
 
 파일 기능은 합성 자료로 Windows·Linux에서 검사합니다. 실제 App Server 읽기는 특정 커밋·Codex0.166.0·격리 Linux·합성 legacy 기록 범위의 관측입니다. 개인 기록·Windows/WSL App Server·다른 버전/OS와 전체 복원은 확인 필요입니다. 이 구분을 모든 사용자 환경 지원으로 확대하지 않습니다.
 
 프로젝트 이름은 Agent Slity이며 저장소 이름은 `Agent-Slity`입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
+
+### 데스크톱 시작
+
+```sh
+npm ci
+npm run desktop:install
+npm run build
+npm run desktop
+```
+
+기본 실행기는 모델 호출 없는 고정 합성 데모입니다. 팀을 고르고 계획 확인→실행/취소→결과 확인을 진행하세요. 기록 보고서는 입력 형식을 선택한 뒤 파일 열기로 읽고, 팀 비교는 같은 합성 과제의 Solo/Small/Full 결과를 확인합니다. 결과는 저장 버튼을 누를 때만 새 파일에 쓰며 기존 파일을 덮어쓰지 않습니다.
+
+실제 Codex는 별도 실행기 선택과 native 실행 파일/작업 폴더 선택 후 `Codex 실행 · 모델 호출`을 누릅니다. 선택한 프로그램은 기존 Codex 로그인/설정을 사용할 수 있고 과제·이전 결과와 선택한 작업 폴더를 읽을 수 있습니다. read-only는 요청 정책이며 Codex 자체의 설정·hook·네트워크·CODEX_HOME 쓰기 전체를 차단했다고 보증하지 않습니다. 실행파일 진위/버전과 실제 모델 호출은 별도 확인 필요입니다. 실제 품질·효율과 절감량은unknown입니다.
+
+Windows 로컬 실행 폴더는 `npm run desktop:package`로 만들고 `artifacts/AgentSlity-win32-x64/AgentSlity.exe`를 실행합니다. 동반 resources와 라이선스 파일을 함께 유지하세요. 서명한 설치 프로그램이나 Release 배포는 아닙니다. 로컬 전체 검사는 `npm run check`, 실제 Electron 검사는 `npm run desktop:smoke`입니다. Linux CI는 라이브러리·번들, Windows CI는 추가로 Electron smoke를 검사합니다.
+
+CLI에서도 `--run-demo <팀 요청 JSON>`, `--compare-demo`를 사용할 수 있습니다. `--run-codex-team <실행 설정 JSON>`은 team_request/task/executable/cwd/timeout_ms와 `confirm_model_call: true`를 명시해야 실제 모델 호출을 요청합니다. [전체 실행 계약](docs/architecture/mvp-workbench.md)을 먼저 확인하세요.
+
+### 팀 구성 계획 사용
+
+```sh
+npm run build
+node dist/cli/main.js --team-plan-text tests/fixtures/team-request-demo.json
+node dist/cli/main.js --team-plan tests/fixtures/team-request-demo.json
+```
+
+합성 예제는 사용자의 `small` 선택을 보존하면서, 요청한 조사·독립 리뷰 조건에 따라 `full` 구성을 별도로 제안합니다. 실제 에이전트를 실행하지 않으며 `execution_status`는 `not_started`입니다. JSON과 한국어 텍스트는 같은 계획을 표시합니다.
+
+요청 파일에서 `selection.mode`를 `solo`·`small`·`full`·`manual`로 선택하고 `constraints.max_agents`를1~3으로 지정하세요. 기본 역할은 solo=구현, small=구현+리뷰, full=조사+구현+리뷰입니다. manual만 `selection.roles`에 `researcher`·`implementer`·`reviewer` 중 구현 담당을 포함한 중복 없는 역할1~3개를 지정하며 입력 순서를 보존합니다. 다른 모드에 roles를 함께 넣으면 거부합니다.
+
+`task.independent_research`와 `task.independent_review`는 요청 조건이며 각각 true·false·null을 명시합니다. 하나라도null이면 추천은 `unknown`이고, 알려진 추천의 필요 인원이 제한을 넘으면 `budget_blocked`입니다. 명시 선택이 제한을 넘으면 입력 오류입니다. 연구만 요청한2명 추천은 조사+구현의 manual이며 small과 구분합니다. 추천이 선택을 바꾸거나 실행하지 않으며 실제 품질·효율은 `unknown`입니다.
+
+입력은 UTF-8/BOM 없는 JSON 파일 하나, 최대64KiB입니다. 원문·모델·인증 정보는 넣지 마세요. 인수 오류는 종료2, 처리 오류는 종료1·빈stdout·고정stderr이며, 유효한unknown/차단 계획은 종료0입니다. 자동 파일 저장은 없고 리디렉션은 원본과 다른 경로를 사용하세요. PowerShell5.1에서 한글 파일로 저장할 때는 아래 보고서 예제와 같이 native 출력 디코딩과 저장 인코딩을 UTF-8로 지정하세요. [전체 입력 계약·규칙·한계](docs/architecture/team-plan-design.md)를 참고하세요.
+
+### 근거 보고서 사용
+
+```sh
+npm run build
+node dist/cli/main.js --report turn tests/fixtures/child-turn-collection-demo.json
+node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json > report.html
+```
+
+생성된 HTML 파일은 브라우저에서 오프라인으로 열 수 있습니다. `turn`은 지원 자식 turn 수집 JSON, `normalization`은 지원 정규화 JSON 스냅샷입니다. 입력 하나를 최대16MiB로 읽으며 raw JSONL 자동 변환·서버 실행·모델 호출·자동 저장은 하지 않습니다. 리디렉션은 원본과 다른 파일을 지정하세요. Windows PowerShell5.1에서는 native 출력의 UTF-8 디코딩과 파일 인코딩을 함께 지정합니다.
+
+```powershell
+$reportOutputEncoding = [Console]::OutputEncoding
+try {
+  [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+  node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json | Set-Content -Encoding UTF8 report.html
+} finally {
+  [Console]::OutputEncoding = $reportOutputEncoding
+}
+```
+
+보고서는 입력 관측 횟수(중복 포함), 중복/상충 의심과 근거 위치, 보고된 명령 실패, 수집/정리 상태를 보여줍니다. 실제 고유 실행·에이전트 수, 품질·전체 시간·전체 토큰·효율·절감량은 `unknown`입니다. 근거 위치는 0부터 시작하며 원문·ID·출처 별칭은 보고서에 복사하지 않습니다. JSON/HTML 본문도 최대16MiB로 제한하며 전체 메모리 상한은 아닙니다. [규칙·오탐 한계·CLI 계약](docs/architecture/evidence-report-design.md)을 참고하세요.
 
 ### 현재 JSONL 읽기 범위
 

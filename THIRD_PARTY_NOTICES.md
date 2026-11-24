@@ -2,7 +2,19 @@
 
 ## 현재 포함된 자료
 
-현재 저장소에는 제3자 구현 코드, 실행 의존성, 과거 Agent Desk 코드, 테스트 자료로 사용하는 모델 출력, 벤치마크 데이터셋을 복사해 포함하지 않는다. 개발·CI 도구는 아래와 같이 의존성으로 사용한다. 자체 작성 자료에 적용하는 [Apache License, Version 2.0](LICENSE) 원문은 [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt)에서 가져왔으며 영문 원문을 보존한다.
+제3자 프로젝트의 구현 소스나 과거 Agent Desk 코드를 직접 복사하지 않는다. 개발·CI 도구와 Electron/React 런타임을 의존성으로 사용하며 로컬 실행 패키지에는 해당 런타임과 번들 코드가 포함된다. 공개 검사에는 자체 작성한 합성 fixture를 사용하며 실제 모델 출력·벤치마크 데이터셋은 포함하지 않는다. 자체 작성 자료에 적용하는 [Apache License, Version 2.0](LICENSE) 원문은 [Apache Software Foundation](https://www.apache.org/licenses/LICENSE-2.0.txt)에서 가져왔으며 영문 원문을 보존한다.
+
+## MVP 런타임과 검증 의존성
+
+2026-11-24 npm registry와 설치 패키지의 라이선스 메타데이터를 확인하고 package-lock에 고정했다. 외부 구현 소스의 직접 이식 없이 공식 패키지를 사용한다.
+
+| 패키지 | 버전 | 라이선스 | 용도·원본 |
+| --- | --- | --- | --- |
+| Electron |45.4.1|MIT 및 동봉 Chromium/제3자 고지|데스크톱 런타임, [원본](https://github.com/electron/electron) |
+| React / React DOM |19.3.1|MIT|renderer 번들, [원본](https://github.com/facebook/react) |
+| Playwright Core |1.65.1|Apache-2.0|개발용 실제 Electron 검사, [원본](https://github.com/microsoft/playwright) |
+
+로컬 패키지는 Electron 배포본의 LICENSE 내용을 ELECTRON-LICENSE로 유지하고 LICENSES.chromium.html도 보존한다. 자체 라이선스는 LICENSE와 AGENT-SLITY-LICENSE로 복사한다. React·React DOM의 설치된 LICENSE도 REACT-LICENSE/REACT-DOM-LICENSE로 함께 복사한다. Playwright는 개발 검사에만 사용하며 실행 패키지에 포함하지 않는다. 상표/아이콘 사용 권한이나 서명·공식 지원을 주장하지 않는다.
 
 ## 개발 도구와 CI
 
@@ -25,7 +37,7 @@
 
 Google Research Harness²는 이후 선택적 어댑터로 검토할 별도의 외부 프로젝트다. 현재 Harness² 코드, 벤치마크와 연동 기능은 포함하지 않는다. 정확한 원본 저장소, 버전, 라이선스와 재배포 조건은 조사 단계와 실제 도입 전에 확인해야 한다. 프로젝트를 언급했다고 제휴, 보증이나 호환성을 의미하지 않는다.
 
-Codex는 예정된 연동 대상이다. Agent Slity는 Google이나 OpenAI의 공식 제품이 아니다. 외부 프로젝트 이름은 해당 프로젝트를 식별하기 위한 것이며, 그 상표나 자료의 사용 권한을 부여하지 않는다.
+Codex는 명시적 실행 연동 대상이며 실제 계정·버전 호환성은 미확인이고 실행 파일은 포함하지 않는다. Agent Slity는 Google이나 OpenAI의 공식 제품이 아니다. 외부 프로젝트 이름은 해당 프로젝트를 식별하기 위한 것이며, 그 상표나 자료의 사용 권한을 부여하지 않는다.
 
 ## 외부 자료 도입 전 확인
 

@@ -8,11 +8,68 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**A bounded stage1 collection/storage foundation is available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Installable applications, efficiency reports, team recommendations, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
+**A local desktop MVP is available.** One workspace connects saved-record reports, team selection and suggestions, synthetic execution/cancellation/comparison and explicit saving. A read-only Codex execution connection accepts a user-selected executable and workspace; real account/version calls remain unverified. See the [MVP workspace](docs/architecture/mvp-workbench.md) for scope and limitations.
+
+**A bounded collection/storage foundation, evidence reports and team composition plans are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Team plans keep explicit selections separate from rule suggestions based on requested conditions. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons and account/version-specific Codex experiments need separate verification; fixed synthetic execution and a local desktop flow are provided first. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
 
 File functions use synthetic checks on Windows/Linux. Actual App Server observations are limited to a specific commit, Codex0.166.0, isolated Linux and synthetic legacy records. Personal records, Windows/WSL App Server, other versions/OSes and complete restoration remain unverified. This does not establish support for every user environment.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
+
+### Starting the desktop
+
+```sh
+npm ci
+npm run desktop:install
+npm run build
+npm run desktop
+```
+
+The default executor is a fixed synthetic demo without model calls. Select a team, inspect its plan, run/cancel and review results. Open a supported snapshot for its report, or compare Solo/Small/Full on the same synthetic task. Saving is explicit, creates a new file and does not overwrite existing files.
+
+Real Codex requires a separate provider selection, native executable/workspace pickers and the explicit model-call button. The selected program may use existing Codex authentication/configuration and read the task, prior results and chosen workspace. Read-only is a requested policy; it does not establish the absence of configuration/hooks/network/CODEX_HOME writes. Executable authenticity/version and real model calls require separate verification. Actual quality, efficiency and savings remain unknown.
+
+On Windows, `npm run desktop:package` creates `artifacts/AgentSlity-win32-x64/AgentSlity.exe`; retain resources and license files with it. This is not a signed installer or published Release. Use `npm run check` for library/bundle checks and `npm run desktop:smoke` for actual Electron checks. Linux CI checks the library/bundle; Windows CI additionally runs Electron smoke.
+
+CLI options `--run-demo <team request JSON>` and `--compare-demo` are also available. `--run-codex-team <execution JSON>` requires team_request/task/executable/cwd/timeout_ms and `confirm_model_call: true` to request a model call. Read the [execution contract](docs/architecture/mvp-workbench.md) first.
+
+### Using team composition plans
+
+```sh
+npm run build
+node dist/cli/main.js --team-plan-text tests/fixtures/team-request-demo.json
+node dist/cli/main.js --team-plan tests/fixtures/team-request-demo.json
+```
+
+The synthetic example preserves the user's `small` selection while separately suggesting `full` for the requested research and independent-review conditions. It starts no agents; `execution_status` is `not_started`. JSON and Korean text display the same plan.
+
+Set `selection.mode` to `solo`, `small`, `full` or `manual`, and `constraints.max_agents` to1–3. Preset roles are solo=implementer, small=implementer+reviewer and full=researcher+implementer+reviewer. Only manual accepts `selection.roles`:1–3 unique roles from `researcher`, `implementer`, `reviewer`, including implementer, preserving input order. Other modes reject an accompanying roles field.
+
+Explicitly set `task.independent_research` and `task.independent_review` to true, false or null. Either null makes the recommendation `unknown`; a known candidate exceeding the limit is `budget_blocked`. An explicit selection exceeding the limit is an input error. A research-only two-person suggestion is manual researcher+implementer, distinct from small. Recommendations neither change the selection nor execute it; actual quality and efficiency remain `unknown`.
+
+Input is one UTF-8/BOM-free JSON file up to64KiB. Do not include source text, model settings or credentials. Invalid arguments exit2; processing errors exit1 with empty stdout and fixed stderr. Valid unknown/blocked plans exit0. No automatic saving occurs; redirect to a different path than the input. For Korean file output on PowerShell5.1, configure both native-output decoding and file encoding as UTF-8 using the report example below. See the [full contract, rules and limitations](docs/architecture/team-plan-design.md).
+
+### Using evidence reports
+
+```sh
+npm run build
+node dist/cli/main.js --report turn tests/fixtures/child-turn-collection-demo.json
+node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json > report.html
+```
+
+Open the HTML file offline in a browser. Use `turn` for supported child-turn collection JSON or `normalization` for a supported normalization JSON snapshot. One input is read up to16MiB; no raw JSONL autodetection, server startup, model call or automatic saving occurs. Redirect to a different file than the source. On Windows PowerShell5.1 configure both native-output UTF-8 decoding and file encoding.
+
+```powershell
+$reportOutputEncoding = [Console]::OutputEncoding
+try {
+  [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+  node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json | Set-Content -Encoding UTF8 report.html
+} finally {
+  [Console]::OutputEncoding = $reportOutputEncoding
+}
+```
+
+Reports show observation counts including duplicates, overlap/conflict candidates with input positions, reported command failures and collection/cleanup states. Actual unique executions/agents, quality, total time/tokens, efficiency and savings remain `unknown`. References are zero-based; source contents, IDs and aliases are excluded. JSON/HTML bodies are also bounded to16MiB, which is not a total memory limit. See the [rules, false-positive limits and CLI contract](docs/architecture/evidence-report-design.md).
 
 ### Current JSONL reader scope
 
