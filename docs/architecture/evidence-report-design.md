@@ -50,3 +50,5 @@ HTML 렌더러는 공개 API가 아닌 CLI 내부 모듈이며 생성기로 검�
 [단위 검사](../../tests/unit/evidence-report.test.ts)는 관측/후보/미확인, null/0·중복/상충·빈 범위/미지원, 구체 위치·부분/정리 상태·hook 비호출·원문 제외를 검사한다. [실제 파일 통합 검사](../../tests/integration/evidence-report.integration.mjs)는 두 저장 형식→읽기→보고서와 파일 불변을 확인한다. 정확한 커밋/OS/명령/CI·skip·독립 리뷰는 Issue에 기록하며 합성 검사와 실제 Codex 지원을 구분한다.
 
 [HTML 단위 검사](../../tests/unit/evidence-report-html.test.ts)와 [실제 CLI 검사](../../tests/integration/evidence-report-cli.integration.mjs)는 표시 수준·null/0·특수문자 이스케이프·잘못된 인수·두 입력 형식·UTF-8/스키마/예산 오류·경로/원문 제외·파일 불변을 검사한다. 실제 브라우저의 넓은/좁은 화면·근거 펼치기·네트워크와 콘솔 관측은 Issue에 별도 기록한다. 효율 비교나 2단계 전체 완료를 주장하지 않는다.
+
+합성 fixture의 실제 브라우저 화면: [데스크톱 관측 요약](images/evidence-report-desktop.png), [390px 근거 펼치기](images/evidence-report-mobile.png). 개인 기록이나 실제 실행의 검증 근거가 아니다.
