@@ -1,0 +1,7 @@
+{
+  "format": "agent-slity.team-request",
+  "version": 1,
+  "selection": { "mode": "small" },
+  "constraints": { "max_agents": 3 },
+  "task": { "independent_research": true, "independent_review": true }
+}

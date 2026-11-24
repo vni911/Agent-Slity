@@ -8,11 +8,27 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ## 현재 상태
 
-**제한된 수집·저장 기반과 첫 근거 보고서를 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교, 설치 가능한 앱, 팀 추천·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
+**제한된 수집·저장 기반, 근거 보고서와 팀 구성 계획을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 팀 계획에서는 명시한 선택과 요청 조건에 따른 규칙 추천을 따로 확인합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교, 설치 가능한 앱, 팀 실행·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
 
 파일 기능은 합성 자료로 Windows·Linux에서 검사합니다. 실제 App Server 읽기는 특정 커밋·Codex0.166.0·격리 Linux·합성 legacy 기록 범위의 관측입니다. 개인 기록·Windows/WSL App Server·다른 버전/OS와 전체 복원은 확인 필요입니다. 이 구분을 모든 사용자 환경 지원으로 확대하지 않습니다.
 
 프로젝트 이름은 Agent Slity이며 저장소 이름은 `Agent-Slity`입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
+
+### 팀 구성 계획 사용
+
+```sh
+npm run build
+node dist/cli/main.js --team-plan-text tests/fixtures/team-request-demo.json
+node dist/cli/main.js --team-plan tests/fixtures/team-request-demo.json
+```
+
+합성 예제는 사용자의 `small` 선택을 보존하면서, 요청한 조사·독립 리뷰 조건에 따라 `full` 구성을 별도로 제안합니다. 실제 에이전트를 실행하지 않으며 `execution_status`는 `not_started`입니다. JSON과 한국어 텍스트는 같은 계획을 표시합니다.
+
+요청 파일에서 `selection.mode`를 `solo`·`small`·`full`·`manual`로 선택하고 `constraints.max_agents`를1~3으로 지정하세요. 기본 역할은 solo=구현, small=구현+리뷰, full=조사+구현+리뷰입니다. manual만 `selection.roles`에 `researcher`·`implementer`·`reviewer` 중 구현 담당을 포함한 중복 없는 역할1~3개를 지정하며 입력 순서를 보존합니다. 다른 모드에 roles를 함께 넣으면 거부합니다.
+
+`task.independent_research`와 `task.independent_review`는 요청 조건이며 각각 true·false·null을 명시합니다. 하나라도null이면 추천은 `unknown`이고, 알려진 추천의 필요 인원이 제한을 넘으면 `budget_blocked`입니다. 명시 선택이 제한을 넘으면 입력 오류입니다. 연구만 요청한2명 추천은 조사+구현의 manual이며 small과 구분합니다. 추천이 선택을 바꾸거나 실행하지 않으며 실제 품질·효율은 `unknown`입니다.
+
+입력은 UTF-8/BOM 없는 JSON 파일 하나, 최대64KiB입니다. 원문·모델·인증 정보는 넣지 마세요. 인수 오류는 종료2, 처리 오류는 종료1·빈stdout·고정stderr이며, 유효한unknown/차단 계획은 종료0입니다. 자동 파일 저장은 없고 리디렉션은 원본과 다른 경로를 사용하세요. PowerShell5.1에서 한글 파일로 저장할 때는 아래 보고서 예제와 같이 native 출력 디코딩과 저장 인코딩을 UTF-8로 지정하세요. [전체 입력 계약·규칙·한계](docs/architecture/team-plan-design.md)를 참고하세요.
 
 ### 근거 보고서 사용
 

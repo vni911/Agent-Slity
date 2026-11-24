@@ -1,4 +1,5 @@
 import { writeFile } from "node:fs/promises";
+import { runTeamPlanCli } from "./team-plan.js";
 import { readNormalizationJson } from "../adapters/normalization-snapshot-file.js";
 import { readChildTurnCollectionJson } from "../adapters/child-turn-snapshot-reader.js";
 import { isSafeSnapshotPath } from "../adapters/snapshot-path.js";
@@ -60,6 +61,9 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "여러 자식 turn 수집 요약: node dist/cli/main.js --child-turn-summaries <JSON 파일> [JSON 파일 ...]",
         "근거 JSON 보고서: node dist/cli/main.js --report <normalization|turn> <스냅샷 JSON 파일>",
         "오프라인 HTML 보고서: node dist/cli/main.js --report-html <normalization|turn> <스냅샷 JSON 파일>",
+        "팀 구성 JSON 계획: node dist/cli/main.js --team-plan <팀 요청 JSON 파일>",
+        "읽기 쉬운 팀 구성 계획: node dist/cli/main.js --team-plan-text <팀 요청 JSON 파일>",
+        "팀 계획은64KiB 요청 파일만 읽으며 선택·추천을 구분합니다. 실제 에이전트를 실행하지 않습니다.",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
@@ -86,6 +90,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       stderr: "",
     };
   }
+  if (args[0] === "--team-plan" || args[0] === "--team-plan-text") return runTeamPlanCli(args);
   if (args[0] === "--report" || args[0] === "--report-html") {
     if (args.length !== 3 || !["normalization", "turn"].includes(args[1] ?? "") ||
         !isSafeSnapshotPath(args[2]) || args[2].startsWith("-")) {

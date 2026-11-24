@@ -8,11 +8,27 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**A bounded collection/storage foundation and an initial evidence report are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons, installable applications, team recommendations, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
+**A bounded collection/storage foundation, evidence reports and team composition plans are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Team plans keep explicit selections separate from rule suggestions based on requested conditions. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons, installable applications, team execution, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
 
 File functions use synthetic checks on Windows/Linux. Actual App Server observations are limited to a specific commit, Codex0.166.0, isolated Linux and synthetic legacy records. Personal records, Windows/WSL App Server, other versions/OSes and complete restoration remain unverified. This does not establish support for every user environment.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
+
+### Using team composition plans
+
+```sh
+npm run build
+node dist/cli/main.js --team-plan-text tests/fixtures/team-request-demo.json
+node dist/cli/main.js --team-plan tests/fixtures/team-request-demo.json
+```
+
+The synthetic example preserves the user's `small` selection while separately suggesting `full` for the requested research and independent-review conditions. It starts no agents; `execution_status` is `not_started`. JSON and Korean text display the same plan.
+
+Set `selection.mode` to `solo`, `small`, `full` or `manual`, and `constraints.max_agents` to1–3. Preset roles are solo=implementer, small=implementer+reviewer and full=researcher+implementer+reviewer. Only manual accepts `selection.roles`:1–3 unique roles from `researcher`, `implementer`, `reviewer`, including implementer, preserving input order. Other modes reject an accompanying roles field.
+
+Explicitly set `task.independent_research` and `task.independent_review` to true, false or null. Either null makes the recommendation `unknown`; a known candidate exceeding the limit is `budget_blocked`. An explicit selection exceeding the limit is an input error. A research-only two-person suggestion is manual researcher+implementer, distinct from small. Recommendations neither change the selection nor execute it; actual quality and efficiency remain `unknown`.
+
+Input is one UTF-8/BOM-free JSON file up to64KiB. Do not include source text, model settings or credentials. Invalid arguments exit2; processing errors exit1 with empty stdout and fixed stderr. Valid unknown/blocked plans exit0. No automatic saving occurs; redirect to a different path than the input. For Korean file output on PowerShell5.1, configure both native-output decoding and file encoding as UTF-8 using the report example below. See the [full contract, rules and limitations](docs/architecture/team-plan-design.md).
 
 ### Using evidence reports
 
