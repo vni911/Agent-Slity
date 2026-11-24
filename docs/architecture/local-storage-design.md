@@ -1,6 +1,6 @@
 # 1단계 로컬 저장 계층의 최소 범위
 
-상태: turn writer·reader 부분 구현·나머지 저장 설계 · 확인일: 2026-11-24 · 최초 설계 [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 최초 설계 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
+상태: turn·정규화 JSON 저장/읽기 구현·형식별 수용 근거 정리 중 · 확인일: 2026-11-24 · 최초 설계 [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 최초 설계 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
 
 writer 업데이트: [Issue #112](https://github.com/vni911/Agent-Slity/issues/112)의 `saveChildTurnCollectionJson(result, path)`와 `ChildTurnSnapshotWriteResult`는 publication_status, temp_cleanup_status, error와 cleanup_errors를 반환하며 수집 JSON에는 넣지 않는다. error는 invalid_input/already_exists/unsupported_storage/io_error 또는 null, cleanup_errors는 close_failed/unlink_failed다. 임시 삭제 실패 뒤 lstat 잔류는 pending, ENOENT는 complete, 잔류나 handle 정리 미확인은 unknown이다. 게시 후 정리 실패는 error:null과 cleanup_errors로 남긴다. 기존 대상 사전 lstat은 거부 최적화이고 동시 게시 방어는 link에 맡긴다. #112 당시 전용 reader와 exec 보완은 추가하지 않았다.
 
@@ -8,9 +8,11 @@ reader 업데이트: [Issue #114](https://github.com/vni911/Agent-Slity/issues/1
 
 ## 목적과 결정안
 
+정규화 형식 업데이트: [Issue #116](https://github.com/vni911/Agent-Slity/issues/116)의 제한된 parser와 [Issue #118](https://github.com/vni911/Agent-Slity/issues/118)의 saveNormalizationJson/readNormalizationJson을 연결한다. 기존 exporter/--output은 유지하고 새 경로에만16MiB·10000레코드·문자열65536단위 제한을 둔다. 두 writer는 같은 내부 게시 엔진과 파일 상태를 공유하며 ChildTurnSnapshotWriteResult는 기존 interface를 유지한다. 정규화 읽기 오류는 NormalizationSnapshotReadError의 고정 메시지/코드다. 파일 형식은 따로 검증하고 전용CLI/DB/인덱스/자동재개는 추가하지 않는다. 실제 OS·CI와 전체1단계 완료 여부는 각 Issue 및 후속 수용 근거에 기록한다.
+
 수집한 관측을 나중에 다시 읽어도 출처·수집 상태·불확실성이 바뀌지 않도록 보존한다. 팀 협업의 효율 보고서가 사용할 근거를 남기는 1단계 기반이며 팀 실행·효율 판단 기능 자체는 아니다. [상위 아키텍처](overview.md)의 저장 요구와 [합성 수용 검증](phase-one-acceptance.md)을 구현 Issue의 완료 기준으로 연결한다. 최초 #110은 설계만 제공했다. 현재는 #112 writer·#114 reader 구현과 후속 계획을 함께 기록하며, 아래 모든 저장 기능이나 환경 지원이 완료됐다는 뜻은 아니다.
 
-권고안은 **사용자가 명시한 새 파일에 기존 형식의 JSON 스냅샷 하나를 보존하는 방식**이다. 파일마다 독립적인 관측이며 자동 병합·중복 제거·검색 인덱스는 두지 않는다. 첫 구현 대상은 이미 exporter와 parser가 있는 자식 turn 수집 결과다. 기존 exec 정규화 결과의 저장/재읽기는 별도 작업으로 남기며, turn 저장 하나만으로 전체 로컬 저장 계층이나 1단계 완료를 선언하지 않는다.
+채택한 최소안은 **사용자가 명시한 새 파일에 기존 형식의 JSON 스냅샷 하나를 보존하는 방식**이다. 파일마다 독립적인 관측이며 자동 병합·중복 제거·검색 인덱스는 두지 않는다. 최초 #110 설계는 turn 저장부터 구현하고 exec 보완을 후속으로 남겼다. 현재 #118의 새 라이브러리 경로는 exec 저장/읽기도 제공한다. 기존 CLI --output은 종전의 직접 새 파일 쓰기를 유지한다. 형식별 수용 근거와 미확인 범위를 검토하기 전에는 전체1단계 완료를 선언하지 않는다.
 
 | 대안 | 장점과 비용 | 이번 결정안 |
 | --- | --- | --- |
@@ -23,7 +25,7 @@ reader 업데이트: [Issue #114](https://github.com/vni911/Agent-Slity/issues/1
 | 대상 | 현재 제공 | 추가로 필요한 저장 검증 |
 | --- | --- | --- |
 | `agent-slity.child-turn-collection`, version1 | exporter·parser·CLI 요약, #112 writer와 #114의 제한된 파일 reader. 실제 파일/경합/중단/왕복 검증은 각 Issue에 기록 | 지원 환경별 추가 근거와 형식별 수용 근거 갱신. turn 저장/읽기만으로 전체 저장 완료를 뜻하지 않음 |
-| `agent-slity.normalization-results`, version1 | 기존 exporter/exec `--output`과 #116의 제한된 문자열 parser | 전용 파일 reader/writer에 게시 계약 적용. 기존 exporter/CLI에는 새 parser의 크기·개수 제한이 자동 적용되지 않음 |
+| `agent-slity.normalization-results`, version1 | 기존 exporter/exec `--output`, #116 parser 및 #118의 명시적 파일 writer/reader | 지원 환경별 추가 근거와 수용 근거 갱신. 기존 exporter/CLI에는 새 파일 API의 크기·개수 제한이 자동 적용되지 않음 |
 | 요약 JSON·관계/중복 후보 출력 | 관측에서 파생하는 별도 출력 | 원래 수집 관측을 대체하는 저장 형식으로 채택하지 않음. 지원되는 근거를 다시 읽어 재계산하며 캐시 저장은 요구하지 않음 |
 
 1단계 저장 완료 판정에는 **각 지원 형식**의 출처·원본 위치·명시적 ID·진단/미지원·불완전 상태를 보존하는 파일 왕복, 명시적 쓰기, 실패/덮어쓰기 경계와 재처리 검증이 필요하다. SQLite 도입이나 디렉터리 전체 검색 자체를 완료 조건으로 삼지 않는다. exec의 기존 새 파일 저장도 유효한 선행 기능이지만 그 사실을 강한 게시·재읽기 계약의 충족으로 바꾸지 않는다. 형식별 부족한 조건을 해소하기 전에는 전체 저장 완료를 표시하지 않는다.
