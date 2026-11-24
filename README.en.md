@@ -217,6 +217,10 @@ For the normal single-file command, replace the path with a JSONL file you choos
 
 `parseNormalizationJson(json)` validates existing agent-slity.normalization-results version1 strings and returns only allowed observations in a new array. Input UTF-8 and canonical output each have a16MiB limit, with at most10,000 records and65,536 UTF-16 units per known string (the existing64-character source alias limit remains). It preserves null/0, order, duplicates, diagnostics, unsupported records and unverified status while dropping extra raw keys. Invalid data raises a fixed TypeError without source content. The existing exporter is unchanged; its entire output range is not necessarily accepted by this bounded reader. JSON.parse duplicate-key/number-precision and source-authentication limits remain. This function performs no file I/O or model calls.
 
+### Saving and reading normalization files
+
+Use `saveNormalizationJson(results, path)` and `readNormalizationJson(path)` to explicitly save and reload exec normalization results. They share the parser limits above and the turn writer's publication/cleanup contract below, returning NormalizationSnapshotWriteResult for writes. Read errors use NormalizationSnapshotReadError with a fixed message and invalid_input/read_failed/invalid_json code. The existing exporter and CLI --output are unchanged. The two file formats are validated separately without implicit conversion.
+
 ### Saving child turn collections
 
 The library's `saveChildTurnCollectionJson(result, path)` explicitly saves a child turn collection to a new file in an existing local parent. It writes up to16MiB of UTF-8 without adding a BOM or LF. It completes the temporary file's write, sync and close before publishing a hard link, without overwriting existing files. File publication_status and temp_cleanup_status are separate from the stored collection state. Cleanup failure after publication does not delete the final file, and error/cleanup classifications exclude paths and raw content.
