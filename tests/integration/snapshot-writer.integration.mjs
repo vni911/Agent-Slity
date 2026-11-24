@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, readFile, readdir, rmdir, statfs, symlink, unlin
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { exportChildTurnCollectionJson, parseChildTurnCollectionJson, saveChildTurnCollectionJson } from "../../dist/index.js";
+import { exportChildTurnCollectionJson, parseChildTurnCollectionJson, readChildTurnCollectionJson, saveChildTurnCollectionJson } from "../../dist/index.js";
 
 const init = { initialization_error: "timeout", cleanup_status: "unknown", collection: null };
 const fixture = resolve("tests/fixtures/child-turn-collection-demo.json");
@@ -94,6 +94,7 @@ test("정확히16MiB인 JSON은 LF 없이 저장해 기존 CLI로 읽고1byte �
   const target = join(dir, "boundary.json");
   assert.equal((await saveChildTurnCollectionJson(input, target)).publication_status, "published");
   assert.deepEqual(await readFile(target), Buffer.from(encoded));
+  assert.equal((await readChildTurnCollectionJson(target)).collection.pages.flatMap(page => page.turns).length, low);
   const cli = spawnSync(process.execPath, [resolve("dist/cli/main.js"), "--child-turn-summary", target], { env, windowsHide: true, encoding: "utf8", timeout: 15000 });
   assert.equal(cli.status, 0); assert.equal(cli.stderr, "");
   assert.equal(JSON.parse(cli.stdout).collection.observations.turns, low);
@@ -101,6 +102,8 @@ test("정확히16MiB인 JSON은 LF 없이 저장해 기존 CLI로 읽고1byte �
   const rejected = join(dir, "over.json");
   assert.equal((await saveChildTurnCollectionJson(input, rejected)).error, "invalid_input");
   assert.equal(await exists(rejected), false);
+  await writeFile(rejected, Buffer.concat([Buffer.from(encoded), Buffer.from(" ")]));
+  await assert.rejects(readChildTurnCollectionJson(rejected), error => error.code === "read_failed");
 });
 
 test("두 프로세스가 같은 최종 이름으로 경쟁해도 하나만 완성된 파일을 게시한다", { timeout: 15000 }, async t => {

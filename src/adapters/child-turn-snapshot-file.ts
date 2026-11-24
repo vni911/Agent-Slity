@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { link, lstat, open, unlink } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { ChildTurnCollectionResult } from "../core/child-thread-collection.js";
 import { exportChildTurnCollectionJson } from "../core/child-turn-json-export.js";
+import { isSafeSnapshotPath } from "./snapshot-path.js";
+export { isSafeSnapshotPath } from "./snapshot-path.js";
 
 export interface ChildTurnSnapshotWriteResult {
   publication_status: "published" | "not_published" | "unknown";
@@ -11,18 +13,6 @@ export interface ChildTurnSnapshotWriteResult {
   temp_cleanup_status: "complete" | "pending" | "unknown";
   error: "invalid_input" | "already_exists" | "unsupported_storage" | "io_error" | null;
   cleanup_errors: ("close_failed" | "unlink_failed")[];
-}
-
-/** 내부 경로 정책. 플랫폼 인수는 정책 검증용이며 public index에서 노출하지 않는다. */
-export function isSafeSnapshotPath(path: unknown, platform: string = process.platform): path is string {
-  if (typeof path !== "string" || !path.trim() || path.includes("\0") || /[\\/]$/.test(path)) return false;
-  if (platform === "win32") {
-    if (/^[\\/]{2}/.test(path) || /^[A-Za-z]:(?![\\/])/.test(path)) return false;
-    const rest = /^[A-Za-z]:/.test(path) ? path.slice(2) : path;
-    if (/[<>:"|?*\x00-\x1f]/.test(rest)) return false;
-    if (rest.split(/[\\/]/).some(part => /^(?:CON|PRN|AUX|NUL|CONIN\$|CONOUT\$|COM[1-9¹²³]|LPT[1-9¹²³])(?:[ .].*)?$/i.test(part.replace(/[ .]+$/, "")))) return false;
-  }
-  return ![".", "..", ""].includes(basename(path));
 }
 
 function code(error: unknown): unknown {

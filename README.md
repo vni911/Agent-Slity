@@ -217,7 +217,9 @@ node dist/cli/main.js --overlaps demo tests/fixtures/demo.jsonl tests/fixtures/d
 
 자식 turn 수집 결과는 라이브러리 `saveChildTurnCollectionJson(result, path)`로 기존 로컬 부모의 새 파일에 명시적으로 저장할 수 있습니다. UTF-8 최대16MiB이며 BOM·LF를 추가하지 않습니다. 임시 파일의 쓰기·sync·close 뒤 hard link로 게시하며 기존 파일은 덮어쓰지 않습니다. 파일 게시 상태 `publication_status`와 임시 정리 상태 `temp_cleanup_status`는 저장한 수집 상태와 별개입니다. 게시 후 정리 실패에도 최종 파일을 삭제하지 않으며 오류·정리 분류에 경로/원문을 포함하지 않습니다.
 
-신뢰하는 부모에서의 비적대적 경합을 전제로 합니다. hard link 미지원 환경의 fallback·Windows ACL 격리·전원 장애 내구성·전체1단계 완료를 보장하지 않습니다. CLI 저장 옵션과 전용 reader는 추가하지 않았고 기존 exec `--output` 동작은 유지합니다. 상세 상태와 검증 한계는 [로컬 저장 설계](docs/architecture/local-storage-design.md)를 참고하세요.
+신뢰하는 부모에서의 비적대적 경합을 전제로 합니다. hard link 미지원 환경의 fallback·Windows ACL 격리·전원 장애 내구성·전체1단계 완료를 보장하지 않습니다. CLI 저장 옵션은 없으며 기존 exec `--output` 동작은 유지합니다. 상세 상태와 검증 한계는 [로컬 저장 설계](docs/architecture/local-storage-design.md)를 참고하세요.
+
+`readChildTurnCollectionJson(path)`는 지정한 일반 파일을 최대16MiB의 fatal UTF-8로 읽어 기존 parser 결과를 반환합니다. 열기 전후·실제 바이트 수를 확인하고 BOM/손상 형식을 거부하며 close를 기다립니다. 오류는 경로·원문 없는 `ChildTurnSnapshotReadError`이며 code는 invalid_input/read_failed/invalid_json입니다. writer와 라이브러리 reader는 Windows 장치·UNC·ADS 등의 경로 정책을 공유합니다. 기존 CLI의 인수·경로 정책과 파일당16MiB·배치 전체64MiB 의미는 유지하며 읽기만으로 저장·서버 실행·탐색을 하지 않습니다.
 
 ## 로드맵
 

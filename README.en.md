@@ -217,7 +217,9 @@ For the normal single-file command, replace the path with a JSONL file you choos
 
 The library's `saveChildTurnCollectionJson(result, path)` explicitly saves a child turn collection to a new file in an existing local parent. It writes up to16MiB of UTF-8 without adding a BOM or LF. It completes the temporary file's write, sync and close before publishing a hard link, without overwriting existing files. File publication_status and temp_cleanup_status are separate from the stored collection state. Cleanup failure after publication does not delete the final file, and error/cleanup classifications exclude paths and raw content.
 
-The parent must be trusted; concurrency coverage concerns non-adversarial writers. There is no fallback for unsupported hard links, Windows ACL isolation, power-loss durability guarantee or claim of full phase1 completion. No CLI save option or dedicated reader is added, and existing exec --output behavior is unchanged. See the [local storage design](docs/architecture/local-storage-design.md) for states and validation limits.
+The parent must be trusted; concurrency coverage concerns non-adversarial writers. There is no fallback for unsupported hard links, Windows ACL isolation, power-loss durability guarantee or claim of full phase1 completion. There is no CLI save option, and existing exec --output behavior is unchanged. See the [local storage design](docs/architecture/local-storage-design.md) for states and validation limits.
+
+`readChildTurnCollectionJson(path)` reads one explicitly selected regular file with a16MiB raw-byte limit and fatal UTF-8 decoding, then returns the existing parser's result. It checks the file before/after opening and actual bytes read, rejects BOMs and malformed formats, and awaits close. ChildTurnSnapshotReadError exposes only a fixed message and invalid_input/read_failed/invalid_json code, without source paths or content. The writer and library reader share Windows device/UNC/ADS restrictions. Existing CLI argument/path policies, per-file16MiB and batch64MiB semantics remain unchanged. Reading does not write, start a server or discover files.
 
 ## Roadmap
 
