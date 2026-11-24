@@ -213,6 +213,10 @@ The `inputs` array gives each input's starting index and result count. Indices a
 
 For the normal single-file command, replace the path with a JSONL file you choose; the second argument is an optional source alias. This command uses standard output and holds results entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
+### Reading normalization JSON
+
+`parseNormalizationJson(json)` validates existing agent-slity.normalization-results version1 strings and returns only allowed observations in a new array. Input UTF-8 and canonical output each have a16MiB limit, with at most10,000 records and65,536 UTF-16 units per known string (the existing64-character source alias limit remains). It preserves null/0, order, duplicates, diagnostics, unsupported records and unverified status while dropping extra raw keys. Invalid data raises a fixed TypeError without source content. The existing exporter is unchanged; its entire output range is not necessarily accepted by this bounded reader. JSON.parse duplicate-key/number-precision and source-authentication limits remain. This function performs no file I/O or model calls.
+
 ### Saving child turn collections
 
 The library's `saveChildTurnCollectionJson(result, path)` explicitly saves a child turn collection to a new file in an existing local parent. It writes up to16MiB of UTF-8 without adding a BOM or LF. It completes the temporary file's write, sync and close before publishing a hard link, without overwriting existing files. File publication_status and temp_cleanup_status are separate from the stored collection state. Cleanup failure after publication does not delete the final file, and error/cleanup classifications exclude paths and raw content.
