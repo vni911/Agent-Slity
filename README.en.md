@@ -213,6 +213,12 @@ The `inputs` array gives each input's starting index and result count. Indices a
 
 For the normal single-file command, replace the path with a JSONL file you choose; the second argument is an optional source alias. This command uses standard output and holds results entirely in memory. Compatibility with actual Codex stored records is unverified. Review output for sensitive identifiers before sharing. When redirecting output, use a different file from the input: redirecting to the source can overwrite it before the CLI reads it.
 
+### Saving child turn collections
+
+The library's `saveChildTurnCollectionJson(result, path)` explicitly saves a child turn collection to a new file in an existing local parent. It writes up to16MiB of UTF-8 without adding a BOM or LF. It completes the temporary file's write, sync and close before publishing a hard link, without overwriting existing files. File publication_status and temp_cleanup_status are separate from the stored collection state. Cleanup failure after publication does not delete the final file, and error/cleanup classifications exclude paths and raw content.
+
+The parent must be trusted; concurrency coverage concerns non-adversarial writers. There is no fallback for unsupported hard links, Windows ACL isolation, power-loss durability guarantee or claim of full phase1 completion. No CLI save option or dedicated reader is added, and existing exec --output behavior is unchanged. See the [local storage design](docs/architecture/local-storage-design.md) for states and validation limits.
+
 ## Roadmap
 
 Each substage requires a separate explicit request; completion of one does not authorize the next.

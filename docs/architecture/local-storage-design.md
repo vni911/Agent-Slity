@@ -1,10 +1,12 @@
 # 1단계 로컬 저장 계층의 최소 범위
 
-상태: 설계 초안·미구현 · 확인일: 2026-11-19 · [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
+상태: turn writer 부분 구현·나머지 저장 설계 · 확인일: 2026-11-24 · 최초 설계 [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 최초 설계 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
+
+업데이트: [Issue #112](https://github.com/vni911/Agent-Slity/issues/112)에서 첫 turn writer `saveChildTurnCollectionJson(result, path)`와 `ChildTurnSnapshotWriteResult`를 구현한다. 파일 계층 반환 필드는 publication_status, temp_cleanup_status, error와 cleanup_errors이며 수집 결과 JSON에는 넣지 않는다. error는 invalid_input/already_exists/unsupported_storage/io_error 또는 null, cleanup_errors는 close_failed/unlink_failed 분류만 포함한다. 임시 삭제 실패 뒤 lstat으로 잔류를 관측하면 pending, ENOENT면 complete, 잔류나 handle 정리가 미확인이면 unknown이다. 게시 뒤 정리 실패는 error:null과 별도의 cleanup_errors로 남긴다. 기존 대상 사전 lstat은 거부 최적화이고, 동시 게시의 덮어쓰기 방어는 link에 맡긴다. CLI 저장·전용 reader·exec 보완과 전체 저장 완료는 추가하지 않는다. 실행 환경·CI·미확인 범위는 해당 Issue에 기록하며 아래 미구현 설계와 실제 구현 범위를 구분한다.
 
 ## 목적과 결정안
 
-수집한 관측을 나중에 다시 읽어도 출처·수집 상태·불확실성이 바뀌지 않도록 보존한다. 팀 협업의 효율 보고서가 사용할 근거를 남기는 1단계 기반이며 팀 실행·효율 판단 기능 자체는 아니다. [상위 아키텍처](overview.md)의 저장 요구와 [합성 수용 검증](phase-one-acceptance.md)을 구현 Issue의 완료 기준으로 연결한다. 이번 변경은 설계만 제공하며 아래 저장 동작이나 지원을 구현·검증했다는 뜻이 아니다.
+수집한 관측을 나중에 다시 읽어도 출처·수집 상태·불확실성이 바뀌지 않도록 보존한다. 팀 협업의 효율 보고서가 사용할 근거를 남기는 1단계 기반이며 팀 실행·효율 판단 기능 자체는 아니다. [상위 아키텍처](overview.md)의 저장 요구와 [합성 수용 검증](phase-one-acceptance.md)을 구현 Issue의 완료 기준으로 연결한다. 최초 #110은 설계만 제공했다. 현재는 #112의 writer 구현과 후속 계획을 함께 기록하며, 아래 모든 저장 기능이나 환경 지원이 완료됐다는 뜻은 아니다.
 
 권고안은 **사용자가 명시한 새 파일에 기존 형식의 JSON 스냅샷 하나를 보존하는 방식**이다. 파일마다 독립적인 관측이며 자동 병합·중복 제거·검색 인덱스는 두지 않는다. 첫 구현 대상은 이미 exporter와 parser가 있는 자식 turn 수집 결과다. 기존 exec 정규화 결과의 저장/재읽기는 별도 작업으로 남기며, turn 저장 하나만으로 전체 로컬 저장 계층이나 1단계 완료를 선언하지 않는다.
 
@@ -18,7 +20,7 @@
 
 | 대상 | 현재 제공 | 추가로 필요한 저장 검증 |
 | --- | --- | --- |
-| `agent-slity.child-turn-collection`, version1 | `exportChildTurnCollectionJson`·`parseChildTurnCollectionJson` 및 저장된 JSON의 CLI 요약 | 아래 게시 계약의 전용 파일 writer와 제한된 파일 재읽기→parser 연결, 실패/경합 검증. 첫 구현 대상 |
+| `agent-slity.child-turn-collection`, version1 | exporter·parser·CLI 요약과 #112의 명시적 파일 writer. writer의 단위/실제 파일/경합/중단 검증은 해당 Issue에 기록 | 전용 파일 reader→parser 연결 및 지원 환경별 추가 근거. writer만으로 전체 저장 완료를 뜻하지 않음 |
 | `agent-slity.normalization-results`, version1 | `exportNormalizationJson`과 exec JSONL CLI `--output`의 새 파일 저장 | 전용 JSON 재읽기 검증기·크기/구조 예산과 게시 계약의 적용을 별도 Issue로 설계·검증. 현재 exporter와 CLI에는 turn JSON의 16MiB 계약이 자동 적용되지 않음 |
 | 요약 JSON·관계/중복 후보 출력 | 관측에서 파생하는 별도 출력 | 원래 수집 관측을 대체하는 저장 형식으로 채택하지 않음. 지원되는 근거를 다시 읽어 재계산하며 캐시 저장은 요구하지 않음 |
 
@@ -35,7 +37,7 @@
 
 ## 명시적 저장과 게시 절차
 
-아래는 후속 구현의 계약이다. 새 public API 이름·CLI 인수·오류 문구는 구현 Issue에서 정하며 이번에는 추가하지 않는다. 읽기/요약만으로 저장·서버 실행·디렉터리 탐색을 시작하지 않는다. 호출자는 기존의 신뢰하는 로컬 부모 디렉터리와 최종 파일 경로 하나를 명시한다. 부모 디렉터리를 자동 생성하지 않는다.
+아래는 #112 writer와 후속 구현에 적용하는 계약이다. writer의 public API는 상단 업데이트에 정의하며 CLI 저장 인수는 추가하지 않는다. 읽기/요약만으로 저장·서버 실행·디렉터리 탐색을 시작하지 않는다. 호출자는 기존의 신뢰하는 로컬 부모 디렉터리와 최종 파일 경로 하나를 명시한다. 부모 디렉터리를 자동 생성하지 않는다.
 
 1. 인수·경로·자료형·exporter 구조/바이트 예산 검증을 먼저 마친다. Windows 장치·콘솔·ADS·확장/UNC 경로와 디렉터리 대상은 거부한다. 입력의 경로·원문·OS 오류 메시지를 반환 오류에 복사하지 않는다.
 2. 같은 부모에 예측하기 어려운 임시 이름을 `wx`, 요청 mode `0600`으로 연다. 충돌 시 기존 임시 파일을 열거나 지우지 않는다. 이번 호출이 생성한 파일과 handle만 관리하고 디렉터리의 다른 파일은 정리하지 않는다.
@@ -47,7 +49,7 @@
 
 ## 실패와 중단의 반환 계약
 
-반환에는 파일 계층의 `publication_status: published | not_published | unknown`, `temp_cleanup_status: complete | pending | unknown`과 원문 없는 고정 오류/경고 분류가 필요하다. 이는 설계상 상태 이름이며 아직 public API가 아니다. `not_published`는 **이 호출이 게시하지 않았음**을 뜻한다. 최종 경로에 다른 파일도 없다는 뜻은 아니다. 이 상태를 수집 결과 안의 `cleanup_status`에 넣지 않는다.
+반환은 파일 계층의 `publication_status: published | not_published | unknown`, `temp_cleanup_status: complete | pending | unknown`과 원문 없는 고정 오류/경고 분류다. #112의 `ChildTurnSnapshotWriteResult` public 타입으로 제공한다. `not_published`는 **이 호출이 게시하지 않았음**을 뜻한다. 최종 경로에 다른 파일도 없다는 뜻은 아니다. 이 상태를 수집 결과 안의 `cleanup_status`에 넣지 않는다.
 
 | 관측한 지점 | 게시 상태와 처리 |
 | --- | --- |
