@@ -1,6 +1,6 @@
 # 1단계 합성 수용 검증 근거
 
-관련 Issue: [#108](https://github.com/vni911/Agent-Slity/issues/108) · 기준 코드: `3f4715c91f4f053a19f24fb66a91f05902a923df` 이후 이 Issue의 테스트 변경 · 확인일: 2026-11-19
+관련 Issue: [#108](https://github.com/vni911/Agent-Slity/issues/108), 저장 수용 [#120](https://github.com/vni911/Agent-Slity/issues/120) · 초기 기준 코드: `3f4715c91f4f053a19f24fb66a91f05902a923df` · 저장 구현 PR #113/#115/#117/#119 및 #120 검사 · 확인일: 2026-11-24
 
 이 문서는 [아키텍처의 필수 합성 시나리오 10개](overview.md#실험과-수용-기준)를 입력·기대 결과·검사에 연결한다. 검사 범위는 합성 자료와 아래의 제한된 라이브러리 경로다. 합성 시나리오의 통과는 1단계 전체 제품 완료나 실제 에이전트 실행·관계의 진위 검증을 뜻하지 않는다. `unverified`, 누락의 `null`/`unknown`, 실제 관측된 `0`을 구분한다.
 
@@ -43,10 +43,26 @@ npm run check
 
 실행 결과와 독립 리뷰는 [Issue #108](https://github.com/vni911/Agent-Slity/issues/108)에 기록한다. 통과 여부와 OS별 skip은 실제 출력으로 확인하며, 이 문서만으로 실행을 주장하지 않는다. 합성 서버는 Node 하위 프로세스로서 stdin/stdout 프로토콜만 처리하고 모델·실제 Codex·Docker·WSL·개인 인증·기록을 사용하지 않는다. 네트워크 차단 컨테이너 시험은 아니다.
 
-## 전체 1단계 판정에서 남기는 경계
+## 저장 경로를 포함한 수용 근거
+
+| 검증 범위 | 근거와 관측 |
+| --- | --- |
+| exec 원본→정규화→JSON 파일→읽기→후보 | [normalization-snapshot.integration.mjs](../../tests/integration/normalization-snapshot.integration.mjs): 원본 JSONL 불변, source/line/ID/진단/미지원/중복·null/0 왕복, 스레드·위치 중복 후보 재계산, 같은 목적지 거부와 별도 파일 보존 |
+| turn 수집 JSON→파일→읽기/요약 | [snapshot-reader.integration.mjs](../../tests/integration/snapshot-reader.integration.mjs), [snapshot-writer.integration.mjs](../../tests/integration/snapshot-writer.integration.mjs): 수집·자식 정리 상태, 순서·중복·미지원 위치와 원문 제외를 유지하고 실제16MiB 경계와 초과를 검사 |
+| 부모 관측의 지연·재처리 | [storage-acceptance.integration.mjs](../../tests/integration/storage-acceptance.integration.mjs): parent 파일이 없던 후보와 추가 후 새 후보를 비교. 이전 partial/server_error·cleanup unknown·파일 바이트가 변하지 않고 중복 관측의 입력 위치를 보존 |
+| 게시와 중단 | [snapshot-writer.integration.mjs](../../tests/integration/snapshot-writer.integration.mjs): 두 프로세스의 같은/다른 이름 경쟁, 쓰는 중·게시 직전·게시 후 반환 전 종료. 최종 파일·남은 임시 파일·응답 부재를 구분. 전원 장애 시험이 아님 |
+| 실패와 자원/민감정보 경계 | [writer unit](../../tests/unit/child-turn-snapshot-file.test.ts), [reader unit](../../tests/unit/child-turn-snapshot-reader.test.ts), [normalization parser unit](../../tests/unit/normalization-json-parse.test.ts), [normalization file unit](../../tests/unit/normalization-snapshot-file.test.ts): 고정 오류·실패 주입, UTF-8/BOM·실제 읽기/출력·레코드/문자열 예산과 경로 거부 |
+
+위 검사는 기존 10개 시나리오의 메모리/프로토콜 근거에 저장·재읽기 근거를 추가한다. 실제 실행의 진위, 동일 실행 확정, 저장되지 않은 이벤트 복원이나 모든 실패 조합을 증명하지 않는다. 정확한 커밋·OS·CI/skip·독립 리뷰는 [Issue #120](https://github.com/vni911/Agent-Slity/issues/120)에 기록한다.
+
+## 1단계 수용 범위와 후속 단계
+
+수용 대상은 **사용자가 명시한 입력과 지원 형식에 대한 라이브러리/개발용 CLI의 수집·정규화·식별자 후보 연결·JSON 내보내기·새 스냅샷 저장/읽기**다. 기존10개 시나리오와 위 저장 계약의 검사가 통과하면 제한된 기반의 수용을 마치고 2단계 근거 보고서 개발로 넘어갈 수 있다. 설치형 앱·팀 실행·모든 Codex/OS 지원·전체 기록 복원은 이 범위의 완료 조건이 아니다. 자동 재개·DB·인덱스도 이 최소안의 필수가 아니다.
+
+원본 파일 내용을 수정하지 않는 기본 분석과 명시적 저장 쓰기를 구분한다. 읽기의 OS 메타데이터 변화나 App Server 자체의 쓰기/네트워크 시도를 없다고 주장하지 않는다. 아래 미확인/미지원 범위는 후속 지원 검증으로 남기며 성공이나0으로 바꾸지 않는다.
 
 - 10개 항목의 위 경로 검증과 아키텍처의 모든 구현 요구가 완료됐다는 주장은 구분한다. 현재 관계 연결은 명시적 값의 후보이며 실제 동일 실행·부모 관계를 인증하지 않는다.
-- [기존 설계](overview.md#경계와-데이터-흐름)의 로컬 저장 계층은 출처·수집 상태·정규화 결과의 일관된 보존을 다룬다. 현재 JSON 저장/왕복만으로 저장 계층 전체 완료를 판정하지 않는다. SQLite는 후보 기술이며 필수로 확정하지 않았다. 최소 범위·형식별 완료 조건과 단계적 구현안은 [저장 설계 초안](local-storage-design.md)에 정리하며, 해당 저장 동작과 지원을 구현·검증했다는 뜻은 아니다.
+- [로컬 저장 계층](local-storage-design.md)은 두 지원 형식의 관측을 각각 새 파일로 보존하고 읽는 최소 범위다. 다중 파일 트랜잭션·지속 인덱스·외부 변경 방어는 제공하지 않는다. 기존 exec CLI --output은 직접 새 파일 쓰기를 유지해 실패 시 부분 파일이 남을 수 있으며 새 게시 계약이 기존 경로에도 적용됐다고 주장하지 않는다.
 - 영구 커서·안전한 체크포인트·저장 수명은 [오프라인 설계](offline-collector-design.md#제안하는-전송수집-경계)에서 별도 설계 대상으로 남겨두었다. 이번 시험으로 구현되었다고 해석하지 않는다.
 - 실제 서버 증거는 [Issue #91](https://github.com/vni911/Agent-Slity/issues/91)의 특정 커밋·Codex 0.166.0·격리 Linux·합성 legacy 기록 범위로 제한된다. 이 작업의 합성 테스트가 해당 실제 서버 시험을 재실행하거나 지원 범위를 확대한 것은 아니다. 해당 시험에서 `thread/items/list`는 미지원이었고 전체 복원·사용자 환경의 Windows/WSL은 확인 필요다. Issue #91은 열린 상태를 유지한다.
 - 효율 보고서·팀 추천·팀 실행·실험·데스크톱 UI는 후속 단계다. 수용 근거를 정리한 뒤에도 해당 단계의 별도 요청을 기다린다.
