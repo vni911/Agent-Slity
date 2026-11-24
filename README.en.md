@@ -8,9 +8,9 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**The stage 1 collection foundation is in progress.** The library and development CLI read a user-selected JSONL file and normalize a limited set of Codex execution events. They do not modify the source or call a model. There is no installable application, thread linking, report generator, or desktop UI yet. Returned values may contain sensitive information and must be reviewed before publication.
+**A bounded stage1 collection/storage foundation is available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Installable applications, efficiency reports, team recommendations, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
 
-The intended first environment is Windows 11 with WSL2 Ubuntu and Codex CLI. Support has not been validated. Windows without WSL, Linux, and macOS are future targets.
+File functions use synthetic checks on Windows/Linux. Actual App Server observations are limited to a specific commit, Codex0.166.0, isolated Linux and synthetic legacy records. Personal records, Windows/WSL App Server, other versions/OSes and complete restoration remain unverified. This does not establish support for every user environment.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
 
@@ -239,7 +239,7 @@ Each substage requires a separate explicit request; completion of one does not a
 | 0.2 | Completed: independent prior-art research and hypotheses |
 | 0.3 | Completed: core/UI boundaries and evidence model design |
 | 0.4 | Completed: development tooling, issue/PR templates, and CI |
-| 1 | In progress: model-free import, normalization, thread linkage, and JSON export |
+| 1 | Bounded acceptance scope: explicit import, normalization, identifier candidates and JSON snapshot save/read. User-environment support and full restoration are separate |
 | 2 | Evidence-backed efficiency reports in JSON and HTML |
 | 3 | Explicit team selection and explainable rule-based recommendations |
 | 4 | Reproducible experiments comparing quality, time, and observed usage |
