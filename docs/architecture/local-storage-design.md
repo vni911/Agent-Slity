@@ -1,12 +1,14 @@
 # 1단계 로컬 저장 계층의 최소 범위
 
-상태: turn writer 부분 구현·나머지 저장 설계 · 확인일: 2026-11-24 · 최초 설계 [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 최초 설계 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
+상태: turn writer·reader 부분 구현·나머지 저장 설계 · 확인일: 2026-11-24 · 최초 설계 [Issue #110](https://github.com/vni911/Agent-Slity/issues/110) · 최초 설계 기준 코드: `ffb90de693b1930bff8250284bbb47b36b122265`
 
-업데이트: [Issue #112](https://github.com/vni911/Agent-Slity/issues/112)에서 첫 turn writer `saveChildTurnCollectionJson(result, path)`와 `ChildTurnSnapshotWriteResult`를 구현한다. 파일 계층 반환 필드는 publication_status, temp_cleanup_status, error와 cleanup_errors이며 수집 결과 JSON에는 넣지 않는다. error는 invalid_input/already_exists/unsupported_storage/io_error 또는 null, cleanup_errors는 close_failed/unlink_failed 분류만 포함한다. 임시 삭제 실패 뒤 lstat으로 잔류를 관측하면 pending, ENOENT면 complete, 잔류나 handle 정리가 미확인이면 unknown이다. 게시 뒤 정리 실패는 error:null과 별도의 cleanup_errors로 남긴다. 기존 대상 사전 lstat은 거부 최적화이고, 동시 게시의 덮어쓰기 방어는 link에 맡긴다. CLI 저장·전용 reader·exec 보완과 전체 저장 완료는 추가하지 않는다. 실행 환경·CI·미확인 범위는 해당 Issue에 기록하며 아래 미구현 설계와 실제 구현 범위를 구분한다.
+writer 업데이트: [Issue #112](https://github.com/vni911/Agent-Slity/issues/112)의 `saveChildTurnCollectionJson(result, path)`와 `ChildTurnSnapshotWriteResult`는 publication_status, temp_cleanup_status, error와 cleanup_errors를 반환하며 수집 JSON에는 넣지 않는다. error는 invalid_input/already_exists/unsupported_storage/io_error 또는 null, cleanup_errors는 close_failed/unlink_failed다. 임시 삭제 실패 뒤 lstat 잔류는 pending, ENOENT는 complete, 잔류나 handle 정리 미확인은 unknown이다. 게시 후 정리 실패는 error:null과 cleanup_errors로 남긴다. 기존 대상 사전 lstat은 거부 최적화이고 동시 게시 방어는 link에 맡긴다. #112 당시 전용 reader와 exec 보완은 추가하지 않았다.
+
+reader 업데이트: [Issue #114](https://github.com/vni911/Agent-Slity/issues/114)의 `readChildTurnCollectionJson(path)`는 기존 CLI의 byte reader를 공유하며 일반 파일·실제16MiB·fatal UTF-8/BOM·finally close와 parser를 연결한다. ChildTurnSnapshotReadError의 code는 invalid_input/read_failed/invalid_json이고 message는 고정이다. writer/라이브러리 reader는 경로 정책을 공유하되 기존 CLI의 인수·경로 정책과 배치64MiB 의미는 유지한다. CLI 저장·exec 보완·전체 저장 완료는 추가하지 않는다. 실제 환경·CI·한계는 각 Issue에 기록한다.
 
 ## 목적과 결정안
 
-수집한 관측을 나중에 다시 읽어도 출처·수집 상태·불확실성이 바뀌지 않도록 보존한다. 팀 협업의 효율 보고서가 사용할 근거를 남기는 1단계 기반이며 팀 실행·효율 판단 기능 자체는 아니다. [상위 아키텍처](overview.md)의 저장 요구와 [합성 수용 검증](phase-one-acceptance.md)을 구현 Issue의 완료 기준으로 연결한다. 최초 #110은 설계만 제공했다. 현재는 #112의 writer 구현과 후속 계획을 함께 기록하며, 아래 모든 저장 기능이나 환경 지원이 완료됐다는 뜻은 아니다.
+수집한 관측을 나중에 다시 읽어도 출처·수집 상태·불확실성이 바뀌지 않도록 보존한다. 팀 협업의 효율 보고서가 사용할 근거를 남기는 1단계 기반이며 팀 실행·효율 판단 기능 자체는 아니다. [상위 아키텍처](overview.md)의 저장 요구와 [합성 수용 검증](phase-one-acceptance.md)을 구현 Issue의 완료 기준으로 연결한다. 최초 #110은 설계만 제공했다. 현재는 #112 writer·#114 reader 구현과 후속 계획을 함께 기록하며, 아래 모든 저장 기능이나 환경 지원이 완료됐다는 뜻은 아니다.
 
 권고안은 **사용자가 명시한 새 파일에 기존 형식의 JSON 스냅샷 하나를 보존하는 방식**이다. 파일마다 독립적인 관측이며 자동 병합·중복 제거·검색 인덱스는 두지 않는다. 첫 구현 대상은 이미 exporter와 parser가 있는 자식 turn 수집 결과다. 기존 exec 정규화 결과의 저장/재읽기는 별도 작업으로 남기며, turn 저장 하나만으로 전체 로컬 저장 계층이나 1단계 완료를 선언하지 않는다.
 
@@ -20,7 +22,7 @@
 
 | 대상 | 현재 제공 | 추가로 필요한 저장 검증 |
 | --- | --- | --- |
-| `agent-slity.child-turn-collection`, version1 | exporter·parser·CLI 요약과 #112의 명시적 파일 writer. writer의 단위/실제 파일/경합/중단 검증은 해당 Issue에 기록 | 전용 파일 reader→parser 연결 및 지원 환경별 추가 근거. writer만으로 전체 저장 완료를 뜻하지 않음 |
+| `agent-slity.child-turn-collection`, version1 | exporter·parser·CLI 요약, #112 writer와 #114의 제한된 파일 reader. 실제 파일/경합/중단/왕복 검증은 각 Issue에 기록 | 지원 환경별 추가 근거와 형식별 수용 근거 갱신. turn 저장/읽기만으로 전체 저장 완료를 뜻하지 않음 |
 | `agent-slity.normalization-results`, version1 | `exportNormalizationJson`과 exec JSONL CLI `--output`의 새 파일 저장 | 전용 JSON 재읽기 검증기·크기/구조 예산과 게시 계약의 적용을 별도 Issue로 설계·검증. 현재 exporter와 CLI에는 turn JSON의 16MiB 계약이 자동 적용되지 않음 |
 | 요약 JSON·관계/중복 후보 출력 | 관측에서 파생하는 별도 출력 | 원래 수집 관측을 대체하는 저장 형식으로 채택하지 않음. 지원되는 근거를 다시 읽어 재계산하며 캐시 저장은 요구하지 않음 |
 
@@ -65,7 +67,7 @@
 
 ## 재읽기·보존·권한 경계
 
-- 재읽기는 사용자가 지정한 일반 파일만 읽고, 열기 전/후 일반 파일·크기 확인, 실제 읽기16MiB+초과 판별1바이트, fatal UTF-8/BOM 거부, parser 검증과 close 완료를 확인한다. 기존 CLI reader의 정책은 근거지만 아직 전용 라이브러리 reader가 있다는 뜻은 아니다. symlink를 명시해 일반 파일을 가리키는 기존 읽기 정책은 유지할 수 있으며 자동 탐색은 하지 않는다.
+- #114의 전용 reader는 지정한 일반 파일만 읽고 열기 전/후 일반 파일·크기 확인, 실제 읽기16MiB+초과 판별1바이트, fatal UTF-8/BOM 거부, parser 검증과 close 완료를 확인한다. 기존 CLI와 내부 byte reader를 공유한다. symlink를 명시해 일반 파일을 가리키는 읽기 정책을 유지하며 자동 탐색은 하지 않는다. 라이브러리 경로 가드와 기존 CLI 경로 가드는 각각 유지하므로 CLI의 허용 경로가 모두 라이브러리에서 허용된다는 뜻은 아니다.
 - 나중에 파일이 바뀌면 현재 바이트를 검증하며 일관된 과거 스냅샷을 인증하지 않는다. 불변은 writer가 게시 후 수정하지 않는다는 뜻이다. 외부 편집·하드 링크를 통한 수정·권한 있는 사용자의 교체를 차단하는 보장은 아니다.
 - 보존 기한은 두지 않고 자동 만료·압축·동기화·업로드·백업·GC를 하지 않는다. 용량은 사용자가 관리하며 디스크 부족은 저장 실패로 처리한다. 삭제는 사용자가 지정 파일을 별도로 관리하는 범위로 남기고 첫 구현에 삭제 API를 넣지 않는다. 미정리 임시 파일도 사용자 확인 없이 일괄 삭제하지 않는다. 안전 삭제나 백업/다른 링크의 제거를 보증하지 않는다.
 - ID·별칭·보고된 설정과 사용자가 정한 파일명은 민감할 수 있다. 허용 목록 저장은 익명화·암호화·비밀 탐지 기능이 아니다. 개인 기록·인증 파일을 공개 테스트에 사용하지 않는다.
