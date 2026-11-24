@@ -1,4 +1,9 @@
 import { writeFile } from "node:fs/promises";
+import { readNormalizationJson } from "../adapters/normalization-snapshot-file.js";
+import { readChildTurnCollectionJson } from "../adapters/child-turn-snapshot-reader.js";
+import { isSafeSnapshotPath } from "../adapters/snapshot-path.js";
+import { createNormalizationEvidenceReport, createChildTurnEvidenceReport } from "../core/evidence-report.js";
+import { renderEvidenceReportHtml } from "./evidence-report-html.js";
 import { readJsonlFile } from "../adapters/jsonl-reader.js";
 import { normalizeCodexExecLine } from "../adapters/codex-exec-normalizer.js";
 import { normalizeCodexThreadReadV0166 } from "../adapters/codex-app-server-thread-read.js";
@@ -53,6 +58,8 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "입력 요약: node dist/cli/main.js --summary <JSONL 파일>",
         "자식 turn 수집 요약: node dist/cli/main.js --child-turn-summary <JSON 파일>",
         "여러 자식 turn 수집 요약: node dist/cli/main.js --child-turn-summaries <JSON 파일> [JSON 파일 ...]",
+        "근거 JSON 보고서: node dist/cli/main.js --report <normalization|turn> <스냅샷 JSON 파일>",
+        "오프라인 HTML 보고서: node dist/cli/main.js --report-html <normalization|turn> <스냅샷 JSON 파일>",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
@@ -78,6 +85,21 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
       ].join("\n"),
       stderr: "",
     };
+  }
+  if (args[0] === "--report" || args[0] === "--report-html") {
+    if (args.length !== 3 || !["normalization", "turn"].includes(args[1] ?? "") ||
+        !isSafeSnapshotPath(args[2]) || args[2].startsWith("-")) {
+      return { exitCode: 2, stdout: "", stderr: "사용법: --report 또는 --report-html <normalization|turn> <스냅샷 JSON 파일>\n" };
+    }
+    try {
+      const report = args[1] === "normalization"
+        ? createNormalizationEvidenceReport(await readNormalizationJson(args[2]))
+        : createChildTurnEvidenceReport(await readChildTurnCollectionJson(args[2]));
+      const output = args[0] === "--report-html" ? renderEvidenceReportHtml(report) : JSON.stringify(report);
+      return { exitCode: 0, stdout: `${output}\n`, stderr: "" };
+    } catch {
+      return { exitCode: 1, stdout: "", stderr: "근거 보고서를 생성할 수 없습니다. 파일·UTF-8·형식·크기를 확인하세요.\n" };
+    }
   }
   if (args[0] === "--child-turn-summary") {
     if (args.length !== 2 || !args[1] || args[1].startsWith("-") || unsafeWindowsSummaryInput(args[1])) {

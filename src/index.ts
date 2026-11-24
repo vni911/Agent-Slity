@@ -24,6 +24,8 @@ export { exportNormalizationJson } from "./core/json-export.js";
 export { parseNormalizationJson } from "./core/normalization-json-parse.js";
 export { saveNormalizationJson, readNormalizationJson, NormalizationSnapshotReadError } from "./adapters/normalization-snapshot-file.js";
 export type { NormalizationSnapshotWriteResult } from "./adapters/normalization-snapshot-file.js";
+export { createNormalizationEvidenceReport, createChildTurnEvidenceReport } from "./core/evidence-report.js";
+export type { EvidenceReport, NormalizationEvidenceReport, ChildTurnEvidenceReport, EvidenceFinding, EvidenceRuleId, EvidenceReference } from "./core/evidence-report.js";
 export { exportChildTurnCollectionJson } from "./core/child-turn-json-export.js";
 export { saveChildTurnCollectionJson } from "./adapters/child-turn-snapshot-file.js";
 export type { ChildTurnSnapshotWriteResult } from "./adapters/child-turn-snapshot-file.js";

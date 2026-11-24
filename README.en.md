@@ -8,11 +8,33 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**A bounded stage1 collection/storage foundation is available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Installable applications, efficiency reports, team recommendations, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
+**A bounded collection/storage foundation and an initial evidence report are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons, installable applications, team recommendations, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
 
 File functions use synthetic checks on Windows/Linux. Actual App Server observations are limited to a specific commit, Codex0.166.0, isolated Linux and synthetic legacy records. Personal records, Windows/WSL App Server, other versions/OSes and complete restoration remain unverified. This does not establish support for every user environment.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
+
+### Using evidence reports
+
+```sh
+npm run build
+node dist/cli/main.js --report turn tests/fixtures/child-turn-collection-demo.json
+node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json > report.html
+```
+
+Open the HTML file offline in a browser. Use `turn` for supported child-turn collection JSON or `normalization` for a supported normalization JSON snapshot. One input is read up to16MiB; no raw JSONL autodetection, server startup, model call or automatic saving occurs. Redirect to a different file than the source. On Windows PowerShell5.1 configure both native-output UTF-8 decoding and file encoding.
+
+```powershell
+$reportOutputEncoding = [Console]::OutputEncoding
+try {
+  [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+  node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json | Set-Content -Encoding UTF8 report.html
+} finally {
+  [Console]::OutputEncoding = $reportOutputEncoding
+}
+```
+
+Reports show observation counts including duplicates, overlap/conflict candidates with input positions, reported command failures and collection/cleanup states. Actual unique executions/agents, quality, total time/tokens, efficiency and savings remain `unknown`. References are zero-based; source contents, IDs and aliases are excluded. JSON/HTML bodies are also bounded to16MiB, which is not a total memory limit. See the [rules, false-positive limits and CLI contract](docs/architecture/evidence-report-design.md).
 
 ### Current JSONL reader scope
 

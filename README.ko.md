@@ -8,11 +8,33 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ## 현재 상태
 
-**1단계의 제한된 수집·저장 기반을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 설치 가능한 앱, 효율 보고서·팀 추천·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
+**제한된 수집·저장 기반과 첫 근거 보고서를 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교, 설치 가능한 앱, 팀 추천·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
 
 파일 기능은 합성 자료로 Windows·Linux에서 검사합니다. 실제 App Server 읽기는 특정 커밋·Codex0.166.0·격리 Linux·합성 legacy 기록 범위의 관측입니다. 개인 기록·Windows/WSL App Server·다른 버전/OS와 전체 복원은 확인 필요입니다. 이 구분을 모든 사용자 환경 지원으로 확대하지 않습니다.
 
 프로젝트 이름은 Agent Slity이며 저장소 이름은 `Agent-Slity`입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
+
+### 근거 보고서 사용
+
+```sh
+npm run build
+node dist/cli/main.js --report turn tests/fixtures/child-turn-collection-demo.json
+node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json > report.html
+```
+
+생성된 HTML 파일은 브라우저에서 오프라인으로 열 수 있습니다. `turn`은 지원 자식 turn 수집 JSON, `normalization`은 지원 정규화 JSON 스냅샷입니다. 입력 하나를 최대16MiB로 읽으며 raw JSONL 자동 변환·서버 실행·모델 호출·자동 저장은 하지 않습니다. 리디렉션은 원본과 다른 파일을 지정하세요. Windows PowerShell5.1에서는 native 출력의 UTF-8 디코딩과 파일 인코딩을 함께 지정합니다.
+
+```powershell
+$reportOutputEncoding = [Console]::OutputEncoding
+try {
+  [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+  node dist/cli/main.js --report-html turn tests/fixtures/child-turn-collection-demo.json | Set-Content -Encoding UTF8 report.html
+} finally {
+  [Console]::OutputEncoding = $reportOutputEncoding
+}
+```
+
+보고서는 입력 관측 횟수(중복 포함), 중복/상충 의심과 근거 위치, 보고된 명령 실패, 수집/정리 상태를 보여줍니다. 실제 고유 실행·에이전트 수, 품질·전체 시간·전체 토큰·효율·절감량은 `unknown`입니다. 근거 위치는 0부터 시작하며 원문·ID·출처 별칭은 보고서에 복사하지 않습니다. JSON/HTML 본문도 최대16MiB로 제한하며 전체 메모리 상한은 아닙니다. [규칙·오탐 한계·CLI 계약](docs/architecture/evidence-report-design.md)을 참고하세요.
 
 ### 현재 JSONL 읽기 범위
 
