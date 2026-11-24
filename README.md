@@ -213,6 +213,10 @@ node dist/cli/main.js --overlaps demo tests/fixtures/demo.jsonl tests/fixtures/d
 
 일반 단일 파일 명령에는 직접 지정한 JSONL을 사용할 수 있으며 두 번째 인수는 선택적인 출처 별칭입니다. 일반 명령은 표준 출력만 사용하며 전체 결과를 메모리에 담습니다. 실제 Codex 저장 기록과의 호환성은 확인 필요입니다. 출력에는 민감한 식별자가 포함될 수 있으므로 공유 전에 확인하세요. 셸 리디렉션으로 결과를 저장할 때는 원본과 다른 파일을 지정하세요. 같은 파일을 지정하면 셸이 원본을 덮어쓸 수 있습니다.
 
+### 정규화 JSON 다시 읽기
+
+`parseNormalizationJson(json)`은 기존 `agent-slity.normalization-results` version1 문자열을 검증해 허용 관측만 새 배열로 반환합니다. 입력 UTF-8 및 정규화된 출력은 각각16MiB, 최대10,000레코드·알려진 문자열65,536 UTF-16코드단위(출처 별칭은 기존64자)를 제한합니다. null/0·순서·중복·진단·미지원과 unverified를 유지하고 추가 원문 키는 버립니다. 손상은 원문 없는 고정 TypeError입니다. 기존 exporter의 허용 범위는 변경하지 않으므로 기존의 모든 출력이 새 제한 안에 들어온다는 뜻은 아닙니다. JSON.parse의 중복 키 마지막 값·숫자 정밀성·출처 인증 한계가 있으며 파일 읽기/저장·모델 호출은 하지 않습니다.
+
 ### 자식 turn 수집 결과의 파일 저장
 
 자식 turn 수집 결과는 라이브러리 `saveChildTurnCollectionJson(result, path)`로 기존 로컬 부모의 새 파일에 명시적으로 저장할 수 있습니다. UTF-8 최대16MiB이며 BOM·LF를 추가하지 않습니다. 임시 파일의 쓰기·sync·close 뒤 hard link로 게시하며 기존 파일은 덮어쓰지 않습니다. 파일 게시 상태 `publication_status`와 임시 정리 상태 `temp_cleanup_status`는 저장한 수집 상태와 별개입니다. 게시 후 정리 실패에도 최종 파일을 삭제하지 않으며 오류·정리 분류에 경로/원문을 포함하지 않습니다.

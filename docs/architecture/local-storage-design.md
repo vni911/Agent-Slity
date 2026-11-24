@@ -23,7 +23,7 @@ reader 업데이트: [Issue #114](https://github.com/vni911/Agent-Slity/issues/1
 | 대상 | 현재 제공 | 추가로 필요한 저장 검증 |
 | --- | --- | --- |
 | `agent-slity.child-turn-collection`, version1 | exporter·parser·CLI 요약, #112 writer와 #114의 제한된 파일 reader. 실제 파일/경합/중단/왕복 검증은 각 Issue에 기록 | 지원 환경별 추가 근거와 형식별 수용 근거 갱신. turn 저장/읽기만으로 전체 저장 완료를 뜻하지 않음 |
-| `agent-slity.normalization-results`, version1 | `exportNormalizationJson`과 exec JSONL CLI `--output`의 새 파일 저장 | 전용 JSON 재읽기 검증기·크기/구조 예산과 게시 계약의 적용을 별도 Issue로 설계·검증. 현재 exporter와 CLI에는 turn JSON의 16MiB 계약이 자동 적용되지 않음 |
+| `agent-slity.normalization-results`, version1 | 기존 exporter/exec `--output`과 #116의 제한된 문자열 parser | 전용 파일 reader/writer에 게시 계약 적용. 기존 exporter/CLI에는 새 parser의 크기·개수 제한이 자동 적용되지 않음 |
 | 요약 JSON·관계/중복 후보 출력 | 관측에서 파생하는 별도 출력 | 원래 수집 관측을 대체하는 저장 형식으로 채택하지 않음. 지원되는 근거를 다시 읽어 재계산하며 캐시 저장은 요구하지 않음 |
 
 1단계 저장 완료 판정에는 **각 지원 형식**의 출처·원본 위치·명시적 ID·진단/미지원·불완전 상태를 보존하는 파일 왕복, 명시적 쓰기, 실패/덮어쓰기 경계와 재처리 검증이 필요하다. SQLite 도입이나 디렉터리 전체 검색 자체를 완료 조건으로 삼지 않는다. exec의 기존 새 파일 저장도 유효한 선행 기능이지만 그 사실을 강한 게시·재읽기 계약의 충족으로 바꾸지 않는다. 형식별 부족한 조건을 해소하기 전에는 전체 저장 완료를 표시하지 않는다.
