@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { runTeamPlanCli } from "./team-plan.js";
+import { runTeamExecutionCli } from "./team-execution.js";
 import { readNormalizationJson } from "../adapters/normalization-snapshot-file.js";
 import { readChildTurnCollectionJson } from "../adapters/child-turn-snapshot-reader.js";
 import { isSafeSnapshotPath } from "../adapters/snapshot-path.js";
@@ -64,6 +65,9 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
         "팀 구성 JSON 계획: node dist/cli/main.js --team-plan <팀 요청 JSON 파일>",
         "읽기 쉬운 팀 구성 계획: node dist/cli/main.js --team-plan-text <팀 요청 JSON 파일>",
         "팀 계획은64KiB 요청 파일만 읽으며 선택·추천을 구분합니다. 실제 에이전트를 실행하지 않습니다.",
+        "합성 팀 실행: node dist/cli/main.js --run-demo <팀 요청 JSON 파일>",
+        "합성 고정 과제 비교: node dist/cli/main.js --compare-demo",
+        "명시적 Codex 모델 호출: node dist/cli/main.js --run-codex-team <실행 설정 JSON 파일>",
         "항목 관측 후보: node dist/cli/main.js --items <JSONL 파일> <출처_별칭>",
         "스레드 관측 후보: node dist/cli/main.js --threads <JSONL 파일> <출처_별칭>",
         "스레드 조회 결과: node dist/cli/main.js --thread-read-jsonl <JSONL 파일> <출처_별칭>",
@@ -91,6 +95,7 @@ export async function runCli(args: readonly string[]): Promise<CliResult> {
     };
   }
   if (args[0] === "--team-plan" || args[0] === "--team-plan-text") return runTeamPlanCli(args);
+  if (["--run-demo", "--compare-demo", "--run-codex-team"].includes(args[0])) return runTeamExecutionCli(args);
   if (args[0] === "--report" || args[0] === "--report-html") {
     if (args.length !== 3 || !["normalization", "turn"].includes(args[1] ?? "") ||
         !isSafeSnapshotPath(args[2]) || args[2].startsWith("-")) {

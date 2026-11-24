@@ -38,6 +38,8 @@ credentials.json
 # 의존성·빌드·개발 도구 산출물
 node_modules/
 dist/
+dist-desktop/
+artifacts/
 build/
 coverage/
 .vitest/

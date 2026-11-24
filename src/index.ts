@@ -27,6 +27,10 @@ export type { NormalizationSnapshotWriteResult } from "./adapters/normalization-
 export { createNormalizationEvidenceReport, createChildTurnEvidenceReport } from "./core/evidence-report.js";
 export { createTeamPlan, parseTeamRequestJson, MAX_TEAM_REQUEST_JSON_BYTES } from "./core/team-plan.js";
 export type { TeamMode, TeamRole, TeamRequirements, TeamRequest, TeamCandidate, TeamPlan } from "./core/team-plan.js";
+export { executeTeam, SYNTHETIC_TASK } from "./core/team-execution.js";
+export type { ExecutionOptions, ExecutionStep, TeamExecution } from "./core/team-execution.js";
+export { compareSyntheticTeams } from "./core/team-comparison.js";
+export type { TeamComparison } from "./core/team-comparison.js";
 export type { EvidenceReport, NormalizationEvidenceReport, ChildTurnEvidenceReport, EvidenceFinding, EvidenceRuleId, EvidenceReference } from "./core/evidence-report.js";
 export { exportChildTurnCollectionJson } from "./core/child-turn-json-export.js";
 export { saveChildTurnCollectionJson } from "./adapters/child-turn-snapshot-file.js";

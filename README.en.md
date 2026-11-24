@@ -8,11 +8,30 @@ Agent Slity is an open-source project developing a tool for measuring the actual
 
 ## Status
 
-**A bounded collection/storage foundation, evidence reports and team composition plans are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Team plans keep explicit selections separate from rule suggestions based on requested conditions. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons, installable applications, team execution, experiment runners and desktop UI are not provided. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
+**A local desktop MVP is available.** One workspace connects saved-record reports, team selection and suggestions, synthetic execution/cancellation/comparison and explicit saving. A read-only Codex execution connection accepts a user-selected executable and workspace; real account/version calls remain unverified. See the [MVP workspace](docs/architecture/mvp-workbench.md) for scope and limitations.
+
+**A bounded collection/storage foundation, evidence reports and team composition plans are available.** Libraries and the development CLI normalize explicit JSONL/supported responses, link thread/item/parent observation candidates, and save/reload two supported JSON snapshot formats. Saved snapshots can produce JSON and offline HTML reports separating observations, suspected candidates and unknowns. Team plans keep explicit selections separate from rule suggestions based on requested conditions. Default analysis does not modify source contents or call models; tool result files are written only through explicit save APIs/options. Actual quality/efficiency comparisons and account/version-specific Codex experiments need separate verification; fixed synthetic execution and a local desktop flow are provided first. Values may be sensitive and require review before publication. See the [stage1 acceptance evidence](docs/architecture/phase-one-acceptance.md) for the bounded scope and unknowns.
 
 File functions use synthetic checks on Windows/Linux. Actual App Server observations are limited to a specific commit, Codex0.166.0, isolated Linux and synthetic legacy records. Personal records, Windows/WSL App Server, other versions/OSes and complete restoration remain unverified. This does not establish support for every user environment.
 
 The project name is Agent Slity and the repository name is `Agent-Slity`. This is an independent project, not an official Google or OpenAI product.
+
+### Starting the desktop
+
+```sh
+npm ci
+npm run desktop:install
+npm run build
+npm run desktop
+```
+
+The default executor is a fixed synthetic demo without model calls. Select a team, inspect its plan, run/cancel and review results. Open a supported snapshot for its report, or compare Solo/Small/Full on the same synthetic task. Saving is explicit, creates a new file and does not overwrite existing files.
+
+Real Codex requires a separate provider selection, native executable/workspace pickers and the explicit model-call button. The selected program may use existing Codex authentication/configuration and read the task, prior results and chosen workspace. Read-only is a requested policy; it does not establish the absence of configuration/hooks/network/CODEX_HOME writes. Executable authenticity/version and real model calls require separate verification. Actual quality, efficiency and savings remain unknown.
+
+On Windows, `npm run desktop:package` creates `artifacts/AgentSlity-win32-x64/AgentSlity.exe`; retain resources and license files with it. This is not a signed installer or published Release. Use `npm run check` for library/bundle checks and `npm run desktop:smoke` for actual Electron checks. Linux CI checks the library/bundle; Windows CI additionally runs Electron smoke.
+
+CLI options `--run-demo <team request JSON>` and `--compare-demo` are also available. `--run-codex-team <execution JSON>` requires team_request/task/executable/cwd/timeout_ms and `confirm_model_call: true` to request a model call. Read the [execution contract](docs/architecture/mvp-workbench.md) first.
 
 ### Using team composition plans
 

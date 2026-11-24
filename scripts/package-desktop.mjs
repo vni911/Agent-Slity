@@ -1,0 +1,18 @@
+import { cp, mkdir, rename, writeFile, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { preparePackageOutput } from './package-path.mjs';
+if (process.platform !== 'win32') throw new Error('현재 로컬 패키징은 Windows에서 검증합니다.');
+const root = process.cwd(), output = await preparePackageOutput(root, process.argv[2] || `AgentSlity-${process.platform}-${process.arch}`);
+await cp(join(root, 'node_modules/electron/dist'), output, { recursive: true, force: false, errorOnExist: true });
+await rename(join(output, 'LICENSE'), join(output, 'ELECTRON-LICENSE'));
+await cp(join(root, 'LICENSE'), join(output, 'LICENSE'));
+const app = join(output, 'resources/app'); await mkdir(app, { recursive: true });
+for (const dir of ['dist', 'dist-desktop', 'desktop']) await cp(join(root, dir), join(app, dir), { recursive: true, filter: source => !source.includes('desktop/renderer') && !source.includes('desktop\\renderer') });
+const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+await writeFile(join(app, 'package.json'), JSON.stringify({ name: metadata.name, version: metadata.version, main: 'desktop/main.cjs', type: 'module' }));
+for (const name of ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'README.ko.md', 'README.en.md', 'CONTRIBUTING.md', 'SECURITY.md']) await cp(join(root, name), join(output, name === 'LICENSE' ? 'AGENT-SLITY-LICENSE' : name));
+await cp(join(root, 'docs'), join(output, 'docs'), { recursive: true });
+for (const name of ['react', 'react-dom']) await cp(join(root, 'node_modules', name, 'LICENSE'), join(output, name.toUpperCase() + '-LICENSE'));
+if (process.platform === 'win32') await rename(join(output, 'electron.exe'), join(output, 'AgentSlity.exe'));
+console.log(`로컬 실행 패키지: ${output}`);
+console.log('서명·설치 프로그램·Release 배포는 포함하지 않습니다.');

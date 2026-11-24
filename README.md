@@ -8,11 +8,30 @@ Agent Slity는 멀티에이전트 협업의 실제 효율을 측정하기 위한
 
 ## 현재 상태
 
-**제한된 수집·저장 기반, 근거 보고서와 팀 구성 계획을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 팀 계획에서는 명시한 선택과 요청 조건에 따른 규칙 추천을 따로 확인합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교, 설치 가능한 앱, 팀 실행·실험 실행기와 데스크톱 UI는 아직 없습니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
+**로컬 데스크톱 MVP를 제공합니다.** 하나의 작업 공간에서 저장 기록 보고서, 팀 구성·추천, 합성 팀 실행·취소·비교와 명시 저장을 사용할 수 있습니다. Codex 실행 파일과 작업 폴더를 직접 선택하는 read-only 실행 연결도 제공하며 실제 계정/버전별 호출 검증은 확인 필요입니다. 구현·검증 범위와 한계는 [MVP 작업 공간](docs/architecture/mvp-workbench.md)에 기록합니다.
+
+**제한된 수집·저장 기반, 근거 보고서와 팀 구성 계획을 제공합니다.** 명시한 JSONL/지원 응답을 정규화하고 스레드·항목·부모의 관측 후보를 연결하며, 두 지원 JSON 형식의 스냅샷 저장/읽기와 개발용 CLI를 제공합니다. 저장된 스냅샷의 관측·의심 후보·미확인을 JSON과 오프라인 HTML로 확인할 수 있습니다. 팀 계획에서는 명시한 선택과 요청 조건에 따른 규칙 추천을 따로 확인합니다. 기본 분석은 원본 내용을 수정하거나 모델을 호출하지 않으며 본 도구의 결과 파일 쓰기는 명시적 저장 API/옵션에서만 수행합니다. 실제 품질·효율 비교와 계정/버전별 Codex 실험은 별도 검증이 필요하며 고정 합성 실행과 로컬 데스크톱 흐름을 먼저 제공합니다. 값에는 민감정보가 포함될 수 있으므로 공개 전에 검토해야 합니다. 1단계 수용 범위와 미확인은 [검증 근거](docs/architecture/phase-one-acceptance.md)에 구분합니다.
 
 파일 기능은 합성 자료로 Windows·Linux에서 검사합니다. 실제 App Server 읽기는 특정 커밋·Codex0.166.0·격리 Linux·합성 legacy 기록 범위의 관측입니다. 개인 기록·Windows/WSL App Server·다른 버전/OS와 전체 복원은 확인 필요입니다. 이 구분을 모든 사용자 환경 지원으로 확대하지 않습니다.
 
 프로젝트 이름은 Agent Slity이며 저장소 이름은 `Agent-Slity`입니다. Google이나 OpenAI의 공식 제품이 아닌 독립 프로젝트입니다.
+
+### 데스크톱 시작
+
+```sh
+npm ci
+npm run desktop:install
+npm run build
+npm run desktop
+```
+
+기본 실행기는 모델 호출 없는 고정 합성 데모입니다. 팀을 고르고 계획 확인→실행/취소→결과 확인을 진행하세요. 기록 보고서는 입력 형식을 선택한 뒤 파일 열기로 읽고, 팀 비교는 같은 합성 과제의 Solo/Small/Full 결과를 확인합니다. 결과는 저장 버튼을 누를 때만 새 파일에 쓰며 기존 파일을 덮어쓰지 않습니다.
+
+실제 Codex는 별도 실행기 선택과 native 실행 파일/작업 폴더 선택 후 `Codex 실행 · 모델 호출`을 누릅니다. 선택한 프로그램은 기존 Codex 로그인/설정을 사용할 수 있고 과제·이전 결과와 선택한 작업 폴더를 읽을 수 있습니다. read-only는 요청 정책이며 Codex 자체의 설정·hook·네트워크·CODEX_HOME 쓰기 전체를 차단했다고 보증하지 않습니다. 실행파일 진위/버전과 실제 모델 호출은 별도 확인 필요입니다. 실제 품질·효율과 절감량은unknown입니다.
+
+Windows 로컬 실행 폴더는 `npm run desktop:package`로 만들고 `artifacts/AgentSlity-win32-x64/AgentSlity.exe`를 실행합니다. 동반 resources와 라이선스 파일을 함께 유지하세요. 서명한 설치 프로그램이나 Release 배포는 아닙니다. 로컬 전체 검사는 `npm run check`, 실제 Electron 검사는 `npm run desktop:smoke`입니다. Linux CI는 라이브러리·번들, Windows CI는 추가로 Electron smoke를 검사합니다.
+
+CLI에서도 `--run-demo <팀 요청 JSON>`, `--compare-demo`를 사용할 수 있습니다. `--run-codex-team <실행 설정 JSON>`은 team_request/task/executable/cwd/timeout_ms와 `confirm_model_call: true`를 명시해야 실제 모델 호출을 요청합니다. [전체 실행 계약](docs/architecture/mvp-workbench.md)을 먼저 확인하세요.
 
 ### 팀 구성 계획 사용
 

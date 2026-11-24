@@ -2,7 +2,7 @@
 
 ## 단계별 작업 범위
 
-0.4 개발 환경 이후 명시적 입력의 수집·정규화·식별자 후보 연결과 두 형식의 스냅샷 저장/읽기를 구현했다. 1단계의 제한된 [수용 범위와 미확인 사항](docs/architecture/phase-one-acceptance.md)을 기준으로 후속 작업을 정한다. 2단계의 첫 기능으로 [JSON·오프라인 HTML 근거 보고서](docs/architecture/evidence-report-design.md), 3단계의 첫 기능으로 [명시적 팀 선택·규칙 추천의 실행 전 계획](docs/architecture/team-plan-design.md)을 제공한다. 실제 품질·효율 비교·팀 실행·실험·UI는 후속 단계이며 라이브러리/개발 CLI 검사로 실제 모든 사용자 환경 지원을 주장하지 않는다.
+0.4 개발 환경 이후 명시적 입력의 수집·정규화·식별자 후보 연결과 두 형식의 스냅샷 저장/읽기를 구현했다. 1단계의 제한된 [수용 범위와 미확인 사항](docs/architecture/phase-one-acceptance.md)을 기준으로 후속 작업을 정한다. 2단계의 첫 기능으로 [JSON·오프라인 HTML 근거 보고서](docs/architecture/evidence-report-design.md), 3단계의 첫 기능으로 [명시적 팀 선택·규칙 추천의 실행 전 계획](docs/architecture/team-plan-design.md)을 제공한다. 명시 실행 제어·고정 합성 비교·로컬 Electron MVP는 제공하며 실제 계정/버전별 Codex 검증과 품질·효율 비교는 미확인이다. 라이브러리/개발 CLI 검사로 실제 모든 사용자 환경 지원을 주장하지 않는다.
 
 에이전트 작업은 소유자가 명시적으로 요청한 세부 단계까지만 수행한다. 결과를 보고한 뒤 다음 요청을 기다린다. 초기 구성 과정에서 후속 마일스톤이나 미래 기능의 뼈대를 구현하거나 과거 Agent Desk 코드를 가져오지 않는다.
 
