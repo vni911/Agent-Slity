@@ -22,6 +22,8 @@ export type { ChildThreadCollectionResult } from "./core/child-thread-collection
 export type { EventSource, NormalizationResult, NormalizedEvent, ObservedUsage } from "./core/events.js";
 export { exportNormalizationJson } from "./core/json-export.js";
 export { exportChildTurnCollectionJson } from "./core/child-turn-json-export.js";
+export { saveChildTurnCollectionJson } from "./adapters/child-turn-snapshot-file.js";
+export type { ChildTurnSnapshotWriteResult } from "./adapters/child-turn-snapshot-file.js";
 export { parseChildTurnCollectionJson } from "./core/child-turn-json-parse.js";
 export { summarizeChildTurnCollection } from "./core/child-turn-summary.js";
 export type { ChildTurnCollectionSummary, ChildTurnObservationCounts } from "./core/child-turn-summary.js";

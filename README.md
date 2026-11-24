@@ -213,6 +213,12 @@ node dist/cli/main.js --overlaps demo tests/fixtures/demo.jsonl tests/fixtures/d
 
 일반 단일 파일 명령에는 직접 지정한 JSONL을 사용할 수 있으며 두 번째 인수는 선택적인 출처 별칭입니다. 일반 명령은 표준 출력만 사용하며 전체 결과를 메모리에 담습니다. 실제 Codex 저장 기록과의 호환성은 확인 필요입니다. 출력에는 민감한 식별자가 포함될 수 있으므로 공유 전에 확인하세요. 셸 리디렉션으로 결과를 저장할 때는 원본과 다른 파일을 지정하세요. 같은 파일을 지정하면 셸이 원본을 덮어쓸 수 있습니다.
 
+### 자식 turn 수집 결과의 파일 저장
+
+자식 turn 수집 결과는 라이브러리 `saveChildTurnCollectionJson(result, path)`로 기존 로컬 부모의 새 파일에 명시적으로 저장할 수 있습니다. UTF-8 최대16MiB이며 BOM·LF를 추가하지 않습니다. 임시 파일의 쓰기·sync·close 뒤 hard link로 게시하며 기존 파일은 덮어쓰지 않습니다. 파일 게시 상태 `publication_status`와 임시 정리 상태 `temp_cleanup_status`는 저장한 수집 상태와 별개입니다. 게시 후 정리 실패에도 최종 파일을 삭제하지 않으며 오류·정리 분류에 경로/원문을 포함하지 않습니다.
+
+신뢰하는 부모에서의 비적대적 경합을 전제로 합니다. hard link 미지원 환경의 fallback·Windows ACL 격리·전원 장애 내구성·전체1단계 완료를 보장하지 않습니다. CLI 저장 옵션과 전용 reader는 추가하지 않았고 기존 exec `--output` 동작은 유지합니다. 상세 상태와 검증 한계는 [로컬 저장 설계](docs/architecture/local-storage-design.md)를 참고하세요.
+
 ## 로드맵
 
 각 세부 단계는 별도의 명시적 요청으로 진행합니다. 한 단계의 완료는 다음 단계의 실행을 허용하지 않습니다.
